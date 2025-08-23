@@ -109,7 +109,7 @@ class ECA:
         if self.print_method == "pyplot":
             self.__print_pyplot()
         elif self.print_method == "png":
-            self.__print_img()
+                self._print_img()
         else:
             for step in self.history:
                 print(step)
@@ -122,9 +122,12 @@ class ECA:
         plt.title(f'Evolution of Rule {self.rule_number}')
         plt.show()
     
-    def __print_img(self):
+    def _print_img(self):
+        file_name = f"CA_history_rule_{self.rule_number}.png"
         image_data = np.array(self.history)
         scaled_data = (image_data * 255).astype(np.uint8)
         image = Image.fromarray(scaled_data, mode='L')
-        image.save(f"CA_history_rule_{self.rule_number}.png")
+        image.save(file_name)
+        return file_name
+
 
