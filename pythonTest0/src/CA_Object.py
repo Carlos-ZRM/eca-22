@@ -20,7 +20,8 @@ class ECA:
         146: lambda P, Q, R: (P | Q) & (P ^ Q ^ R),
         150: lambda P, Q, R: P ^ Q ^ R,
         154: lambda P, Q, R: R ^ ( P & ~Q),
-        164: lambda P, Q, R: P ^ R ^ ( P | Q | R)
+        164: lambda P, Q, R: P ^ R ^ ( P | Q | R),
+        195: lambda P, Q, R: ~ (P ^ Q)
         # Add more rules as needed, e.g.:
         # 90: lambda P, Q, R: A ^ C,
     }
@@ -28,7 +29,7 @@ class ECA:
     def __init__(self, rule_number=22):
         self.rule_number = rule_number
 
-    def define_evolution_config(self, size, evolutions, init_method="single_cell", print_method="pyplot"):
+    def define_evolution_config(self, size, evolutions, init_method="single_cell", print_method="pyplot", seed="01011001010"):
         """ Initialize evolution configuration parameters
         Args:
             size (int): Size of the cellular automa array.
@@ -43,8 +44,19 @@ class ECA:
         self.history = []
         self.init_method = init_method
         self.print_method = print_method
+        # Initialize the state based on the chosen method
         if init_method == "single_cell":
             self.init_state = self.init_one()
+        elif init_method == "single_cell_zero":
+            self.init_state = self.init_zero()
+        elif init_method == "random":
+            self.init_state = self.init_random()
+        elif init_method == "seed":
+            self.seed = seed
+            self.init_state = self.init_seed(seed)
+        elif init_method == "seed_zero":
+            self.seed = seed
+            self.init_state = self.init_seed_zero(seed)
 
     def init_one(self):
         """
@@ -55,6 +67,66 @@ class ECA:
         """
         init_state = np.zeros(self.size, dtype=np.uint8)
         init_state[self.size // 2] = 1
+        return init_state
+
+    def init_zero(self):
+        """
+        Initialize the cellular automaton with all cells inactive.
+
+        Returns:
+            np.ndarray: Initial state array with all cells inactive.
+        """
+        init_state = np.ones(self.size, dtype=np.uint8)
+        init_state[self.size // 2] = 0
+        print(init_state)
+        return init_state
+
+    def init_random(self, rdensity=0.5):
+        """
+        Initialize the cellular automaton with a random state.
+        Args:
+            rdensity (float): Density of random 1s in the initial state.
+        Returns:
+            np.ndarray: Initial state array with random values.
+        """
+        return np.random.choice([0, 1], size=self.size, p=[rdensity, 1-rdensity])
+
+
+    def init_seed(self, seed):
+        """
+        Initialize the cellular automaton with a seed string.
+        Args:
+            seed (str): A string of 0s and 1s representing the initial state.
+        Returns:
+            np.ndarray: Initial state array based on the seed string.
+        """
+        # Define the position to insert the seed
+        pos = (self.size - len(seed)) // 2
+        # Create the initial state array
+        init_state = np.zeros(self.size, dtype=np.uint8)
+        # create seed array
+        seed_array = np.fromstring(seed, dtype=np.uint8) - ord('0')
+        # insert seed array into initial state
+        init_state[pos:pos + len(seed)] = seed_array
+        return init_state
+
+    def init_seed_zero(self, seed):
+        """
+        Initialize the cellular automaton with a seed string.
+        Args:
+            seed (str): A string of 0s and 1s representing the initial state.
+        Returns:
+            np.ndarray: Initial state array based on the seed string.
+        """
+        # Define the position to insert the seed
+        pos = (self.size - len(seed)) // 2
+        # Create the initial state array
+        init_state = np.ones(self.size, dtype=np.uint8)
+        # create seed array
+        seed_array = np.fromstring(seed, dtype=np.uint8) - ord('0')
+        # insert seed array into initial state
+        init_state[pos:pos + len(seed)] = seed_array
+        print(init_state)
         return init_state
 
     def next_evolution(self, array):
