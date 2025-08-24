@@ -41,10 +41,10 @@ def init_random(N, rdensity, use_gpu=False):
 def next_evolution(A, use_gpu=False):
     """Performs one evolution step on either a NumPy or CuPy array."""
     xp = cp if use_gpu and GPU_AVAILABLE else np
-    
+
     B = xp.concatenate((A[1:], xp.array([0])))
     C = xp.concatenate((xp.array([0]), A[:-1]))
-    
+
     return (A ^ B ^ C) ^ (A & B & C)
 
 
@@ -79,17 +79,17 @@ def save_to_mongodb_efficient(history, params):
         return
 
     print(f"\nSaving evolution history to MongoDB (Efficient Method)...")
-    
+
     connection_string = "mongodb://localhost:27017/"
-    
+
     try:
         client = pymongo.MongoClient(connection_string)
         db = client["automata_db"]
-        
+
         # Define collections
         metadata_collection = db["runs_metadata"]
         steps_collection = db["evolution_steps"]
-        
+
         # 1. Create a single metadata document for the entire run
         run_id = f"run_{int(time.time())}"
         metadata_doc = {
@@ -110,7 +110,7 @@ def save_to_mongodb_efficient(history, params):
                 "step": i,
                 "vector": vector_binary
                 "isFractal": ""
-                
+
             }
             step_documents.append(doc)
 
@@ -135,7 +135,7 @@ if __name__ == "__main__":
         "N": 1001,
         "rdensity": 0.5
     }
-    
+
     # --- Execution ---
     print("\nRunning evolution on CPU.")
     start_time = time.time()
@@ -147,7 +147,6 @@ if __name__ == "__main__":
     print(f"Data generation took: {end_time - start_time:.4f} seconds")
 
     create_image_with_pillow(evolution_history_cpu, filename="evolution_cpu_generated.png")
-    
+
     # Save the final history to MongoDB using the new efficient method
     save_to_mongodb_efficient(evolution_history_cpu, params)
-

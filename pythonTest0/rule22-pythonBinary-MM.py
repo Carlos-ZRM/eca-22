@@ -102,13 +102,13 @@ def init_random(N, rdensity, use_gpu=False):
 def next_evolution(A, use_gpu=False):
     """Performs one evolution step on either a NumPy or CuPy array."""
     xp = cp if use_gpu and GPU_AVAILABLE else np
-    
+
     # Create array 'B' by shifting 'A' one position to the left.
     B = np.concatenate((A[1:], [A[0]]))
 
     # Create array 'C' by shifting 'A' one position to the right.
     C = np.concatenate(([A[-1]], A[:-1]))
-    
+
     return (A ^ B ^ C) ^ (A & B & C)
     ## Regla 30
 
@@ -197,15 +197,15 @@ def save_to_mongodb_efficient(history, params):
         return
 
     print(f"\nSaving evolution history to MongoDB (Efficient Method)...")
-    
+
     connection_string = "mongodb://localhost:27017/"
-    
+
     try:
         client = pymongo.MongoClient(connection_string)
         db = client["automata_db"]
         metadata_collection = db["runs_metadata"]
         steps_collection = db["evolution_steps"]
-        
+
         run_id = f"run_{int(time.time())}"
         metadata_doc = {"_id": run_id, "timestamp": datetime.utcnow(), "parameters": params}
         metadata_collection.insert_one(metadata_doc)
@@ -237,7 +237,7 @@ def save_to_mongodb_efficient(history, params):
 if __name__ == "__main__":
     params = {"steps": 5000, "N": 10001, "rdensity": 0.045}
     #params = {"steps": 50000, "N": 50000, "rdensity": 0.00045}
-    
+
     print("\nRunning evolution on CPU.")
     start_time = time.time()
 
@@ -251,10 +251,9 @@ if __name__ == "__main__":
 
     output_image_filename = "evolution_cpu_generated.png"
     create_image_with_pillow(evolution_history_cpu, filename=output_image_filename)
-    
+
     # Apply the new erosion function to the generated image
     apply_erosion(output_image_filename)
 
     # Save the final history to MongoDB
     save_to_mongodb_efficient(evolution_history_cpu, params)
-

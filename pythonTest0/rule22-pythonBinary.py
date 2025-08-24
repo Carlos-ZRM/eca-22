@@ -91,7 +91,7 @@ def create_image(data, filename="evolution_pattern.png"):
     plt.title("Binary Array Evolution")
     plt.xlabel("Cell Position")
     plt.ylabel("Time Step")
-    
+
     # Save the figure to a file.
     plt.savefig(filename)
     print("Image saved successfully.")
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     # Define the number of steps and the size of the binary array.
     steps = 5000 # Number of evolution steps to perform
     N = 5000
-    
+
     # Define the random density for the initial state.
     # A value of 0.5 means each cell has a 50% chance of being 1.
     rdensity = 0.0002
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     #print_array_as_string(f"Step 0", evolution_history[0])
     #print_array_as_string(f"Step 1", evolution_history[1])
     #print_array_as_string(f"Step 2", evolution_history[2])
-    
+
     # Create and save an image from the history.
     create_image(evolution_history, filename="evolution_random_start.png")
     # Create and save an image using Pillow for efficiency.

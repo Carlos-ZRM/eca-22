@@ -45,7 +45,7 @@ class ECA_MM(ECA):
         dilation = cv.dilate(img, self.kernel, iterations=self.iterations)
         cv.imwrite(dilated_filename, dilation, [cv.IMWRITE_PNG_BILEVEL, 1])
         return dilated_filename
-    
+
     def erosion(self):
         """
         Apply morphological erosion to the image.
@@ -69,7 +69,7 @@ class ECA_MM(ECA):
         gradient = cv.morphologyEx(img, cv.MORPH_GRADIENT, self.kernel, iterations=self.iterations)
         cv.imwrite(gradient_filename, gradient, [cv.IMWRITE_PNG_BILEVEL, 1])
         return gradient_filename
-    
+
     def black_hat(self):
         """
         Apply morphological black hat to the image.
@@ -81,4 +81,3 @@ class ECA_MM(ECA):
         black_hat = cv.morphologyEx(img, cv.MORPH_BLACKHAT, self.kernel, iterations=self.iterations)
         cv.imwrite(black_hat_filename, black_hat, [cv.IMWRITE_PNG_BILEVEL, 1])
         return black_hat_filename
-

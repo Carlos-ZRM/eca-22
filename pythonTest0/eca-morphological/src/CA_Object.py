@@ -29,7 +29,10 @@ class ECA:
     def __init__(self, rule_number=22):
         self.rule_number = rule_number
 
-    def define_evolution_config(self, size, evolutions, init_method="single_cell", print_method="pyplot", seed="01011001010"):
+    def define_evolution_config(self, size, evolutions,
+                                init_method="single_cell",
+                                print_method="pyplot",
+                                seed="01011001010"):
         """ Initialize evolution configuration parameters
         Args:
             size (int): Size of the cellular automa array.
@@ -173,7 +176,7 @@ class ECA:
         final_time = time.time()
         print(f"Evolution execution time: {final_time - initial_time:.6f} seconds")
         return self.history
-    
+
     def print_history(self):
         """
         Prints the history of states in the cellular automaton.
@@ -193,7 +196,7 @@ class ECA:
         plt.imshow(self.history, cmap='binary', aspect='auto')
         plt.title(f'Evolution of Rule {self.rule_number}')
         plt.show()
-    
+
     def _print_img(self):
         file_name = f"CA_history_rule_{self.rule_number}.png"
         image_data = np.array(self.history)
@@ -201,5 +204,3 @@ class ECA:
         image = Image.fromarray(scaled_data, mode='L')
         image.save(file_name)
         return file_name
-
-
