@@ -2,11 +2,11 @@
 ECA evolutions.
 """
 
-import ca_object
+import ca_class
 
-eca = ca_object.Eca(rule_number=22)
+eca = ca_class.Eca(rule_number=22)
 eca.define_evolution_config(
-    size=500, evolutions=500, print_method="pyplot", init_method="seed_zero"
+    size=5000, evolutions=5000, print_method="pyplot", init_method="single_cell"
 )
 eca.evolution()
 eca.print_history()

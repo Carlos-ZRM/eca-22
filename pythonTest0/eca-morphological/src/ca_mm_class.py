@@ -3,7 +3,7 @@
 import cv2 as cv
 import numpy as np
 
-from ca_object import Eca
+from ca_class import Eca
 
 
 class EcaMm(Eca):
@@ -27,6 +27,7 @@ class EcaMm(Eca):
 
         """
         super().__init__(rule_number=rule_number)
+        self.cell_color_1 = 1
         self.kernel = kernel
         self.image_file = ""
         self.iterations = iterations
