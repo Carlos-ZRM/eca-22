@@ -27,11 +27,24 @@ class FractalCountTriangle:
     def count_triangles(self):
         rows, cols = self.binary_image.shape
         print(f"Image shape: {rows}x{cols}")
-        x = 1
+        x = 5
+        visited_j = [0]*cols
         print(self.binary_image[x])
-        line = self.find_line(x, 0)
-        print(f"Line found at: {line}")
-        
+        list_lines = []
+        for j in range(cols):
+            flag_visited = visited_j[j]
+            if flag_visited == 0:
+                #print(f"Processing cell at row {x}, column {j}, flag_visited: {flag_visited}" )
+                line_start, line_end = self.find_line(x, j)
+                if line_start != None and line_end != None:
+                    self.mark_visited(visited_j, line_start, line_end)
+                    #print("Range of columns:", visited_j)
+                    #print(f"Line found at: {line_start}, {line_end}")
+                    list_lines.append((line_start, line_end))
+                else:
+                    visited_j[j] = 1
+        print("List of lines found:", list_lines, "value search ", self.line_value_search)
+
         # for j in range(cols):
         #     cell = self.binary_image[x, j]
         #     line_start, line_end = self.find_line(x, j)
@@ -47,6 +60,9 @@ class FractalCountTriangle:
         #return self.histogram
 
     def find_line(self, row, col):
+        if self.binary_image[row, col] != self.line_value_search:
+            # Is a background pixel
+            return None, None
         left_col = self.find_start_line(row, col-1)
         right_col = self.find_end_line(row, col+1)
 
@@ -64,8 +80,21 @@ class FractalCountTriangle:
         else:
             return col+1
     def find_end_line(self, row, col):
+        end_col = None
+        if col >= 50:
+            #print("At the end of the row",col)
+            end_col = col
+            col = 0
         value = self.binary_image[row, col]
         if value == self.line_value_search:
             return self.find_end_line(row, col+1)
         else:
+            if end_col!=None:
+                return end_col - 1
             return col-1
+    def mark_visited(self, row_list, j_start, j_end):
+        x = j_start
+        while x <= j_end:
+            row_list[x]=1
+            # Process the cell at row_list, x
+            x += 1
