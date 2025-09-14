@@ -41,7 +41,7 @@ class Eca:
         self.print_method = None
         self.init_state = None
         self.seed = None
-        self.cell_color_1 = 0 # default color black
+        self.cell_color_1 = 0  # default color black
 
     def define_evolution_config(
         self,
@@ -89,10 +89,10 @@ class Eca:
 
         """
         init_state = np.zeros(self.size, dtype=np.uint8)
-        
+
         init_state[0] = 1
-        #init_state[self.size // 2] = 1
-        
+        # init_state[self.size // 2] = 1
+
         return init_state
 
     def init_zero(self):

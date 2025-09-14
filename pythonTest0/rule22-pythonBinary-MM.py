@@ -235,15 +235,15 @@ def save_to_mongodb_efficient(history, params):
 
 
 if __name__ == "__main__":
-    params = {"steps": 5000, "N": 10001, "rdensity": 0.045}
+    params = {"steps": 5000, "N": 10001, "rdensity": 0.00045}
     #params = {"steps": 50000, "N": 50000, "rdensity": 0.00045}
 
     print("\nRunning evolution on CPU.")
     start_time = time.time()
 
     # Correctly initialize the state
-    initial_state = init_random(params["N"], params["rdensity"], use_gpu=False)
-    #initial_state = init(params["N"], use_gpu=False)  # Fallback to the original init if needed
+    #initial_state = init_random(params["N"], params["rdensity"], use_gpu=False)
+    initial_state = init(params["N"], use_gpu=False)  # Fallback to the original init if needed
     evolution_history_cpu = evolution(initial_state, params["steps"], use_gpu=False)
 
     end_time = time.time()
