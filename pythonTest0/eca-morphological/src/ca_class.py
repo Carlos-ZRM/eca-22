@@ -212,9 +212,9 @@ class Eca:
     def print_history(self):
         """Prints the history of states in the cellular automaton."""
         if self.print_method == "pyplot":
-            self.__print_pyplot()
+            return self.__print_pyplot()
         elif self.print_method == "png":
-            self._print_img()
+            return self._print_img()
         else:
             for step in self.history:
                 print(step)
@@ -234,5 +234,30 @@ class Eca:
         else:
             scaled_data = (image_data * 255).astype(np.uint8)
         image = Image.fromarray(scaled_data, mode="L")
-        image.save(file_name)
-        return file_name
+        print(f"Image generated: {file_name}")
+        ##image.save(file_name)
+        return image
+
+def to_string(obj):
+    """
+    Returns a string representation of an object, showing all its
+    instance variables and their values.
+
+    Args:
+        obj: The object to convert to a string.
+
+    Returns:
+        A formatted string with the object's class name and its attributes.
+    """
+    # Get the class name of the object
+    class_name = obj.__class__.__name__
+
+    # Get the dictionary of instance variables
+    attributes = vars(obj)
+
+    # Format the attributes into a readable string
+    attr_list = [f"{key}={repr(value)}" for key, value in attributes.items()]
+    attrs_str = ", ".join(attr_list)
+
+    # Combine the class name and attributes
+    return f"{class_name}({attrs_str})"

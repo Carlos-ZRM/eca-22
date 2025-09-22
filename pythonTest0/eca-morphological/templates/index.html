@@ -195,8 +195,7 @@
 
     <!-- Tab Buttons -->
     <div class="tab-bar">
-        <button class="tab-link active" onclick="openTab(event, 'Simulation')">Simulation</button>
-        <button class="tab-link" onclick="openTab(event, 'ImageViewer')">Image Viewer</button>
+    <button class="tab-link active" onclick="openTab(event, 'Simulation')">Simulation</button>
         <div class="theme-switch-wrapper">
             <label class="theme-switch" for="theme-toggle">
                 <input type="checkbox" id="theme-toggle" />
@@ -229,7 +228,7 @@
                         Num Evolutions
                         <span class="info-icon" data-info="Determines the height of the simulation (number of generations).">ⓘ</span>
                     </label>
-                    <input type="number" id="num-evolutions-input" name="num_evolutions" value="50" required>
+                    <input type="number" id="num-evolutions-input" name="num_evolutions" value="500" required>
                 </div>
                  <div>
                     <label for="init-method-select">
@@ -237,6 +236,13 @@
                         <span class="info-icon" data-info="Choose the initial state of the first generation. 'Single Cell' starts with one active cell, 'Random' starts with a random assortment.">ⓘ</span>
                     </label>
                     <select name="init_method" id="init-method-select"></select>
+                </div>
+                <div id="density-container" style="display:none;">
+                    <label for="density-input">
+                        Densidad
+                        <span class="info-icon" data-info="Solo para 'Random'. Valor entre 0 y 1 (float).">ⓘ</span>
+                    </label>
+                    <input type="number" id="density-input" name="density" min="0" max="1" step="0.01" value="0.5">
                 </div>
                 <div>
                     <label for="print-method-select">
@@ -246,24 +252,15 @@
                     <select name="print_method" id="print-method-select"></select>
                 </div>
                 <button type="submit">Send</button>
+            <button type="button" id="save-image-btn" style="display:none;">Guardar imagen</button>
             </form>
         </div>
-        <div id="right-panel">
-            <canvas id="image-canvas" width="400" height="400"></canvas>
+        <div id="right-panel" style="overflow:auto; max-height:80vh;">
+            <canvas id="image-canvas" style="width:100%; height:auto; display:block;"></canvas>
         </div>
     </div>
 
-    <!-- Tab 2: Image Viewer -->
-    <div id="ImageViewer" class="tab-content main-content">
-        <div id="left-menu">
-            <h2>File Picker</h2>
-            <label for="file-picker">Choose an image:</label>
-            <input type="file" id="file-picker" accept="image/*">
-        </div>
-        <div id="right-panel">
-            <img id="image-display" src="" alt="Selected image will appear here.">
-        </div>
-    </div>
+
 
     <!-- Info Popup Container -->
     <div id="info-popup"></div>
@@ -271,9 +268,9 @@
     <script>
         // --- Simulate data passed from Python backend ---
         const backendData = {
-            rules: ["18", "22"],
-            init_methods: ["Single Cell", "Random", "Seeds"],
-            print_methods: ["Pyplot", "PIL"]
+            rules: {{ rules | tojson }},
+            init_methods: {{ init_methods | tojson }},
+            print_methods: {{ print_methods | tojson }}
         };
 
         // --- Populate Dropdowns ---
@@ -349,62 +346,70 @@
         });
 
         // --- Tab 1: Simulation Logic (with Simulated Backend) ---
+        // Mostrar/ocultar campo densidad según método de inicialización
+        window.onload = function() {
+            const initMethodSelect = document.getElementById('init-method-select');
+            const densityContainer = document.getElementById('density-container');
+            function toggleDensity() {
+                if (initMethodSelect.value === 'Random') {
+                    densityContainer.style.display = 'block';
+                } else {
+                    densityContainer.style.display = 'none';
+                }
+            }
+            initMethodSelect.addEventListener('change', toggleDensity);
+            toggleDensity();
+        };
         const simForm = document.getElementById('param-form');
         const canvas = document.getElementById('image-canvas');
         const ctx = canvas.getContext('2d');
         
-        function drawInitialCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.font = "16px Arial";
-            ctx.fillStyle = "#555";
-            ctx.textAlign = "center";
-            ctx.fillText("Select parameters and click Send", canvas.width / 2, canvas.height / 2);
-        }
-        drawInitialCanvas();
 
         simForm.addEventListener('submit', (event) => {
-            event.preventDefault(); // Stop form from actually submitting
-            
-            // Get form data
+        // Guardar imagen del canvas como PNG
+        document.getElementById('save-image-btn').addEventListener('click', function() {
+            const filename = 'simulacion.png';
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            // Mostrar popup con nombre y ruta
+            alert(`Imagen guardada como: ${filename}\nRuta: Descargas o carpeta configurada en tu navegador.`);
+        });
+            event.preventDefault();
+            console.log('Botón Send presionado');
             const formData = new FormData(simForm);
-            const params = Object.fromEntries(formData.entries());
-
-            // Simulate the backend image generation
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = 'black';
-            ctx.textAlign = 'left';
-            ctx.font = '15px Arial';
-
-            ctx.fillText("Image Generated with Parameters:", 10, 25);
-            ctx.fillText(`- Rule: ${params.rule}`, 20, 50);
-            ctx.fillText(`- Cell Space: ${params.cell_space}`, 20, 70);
-            ctx.fillText(`- Evolutions: ${params.num_evolutions}`, 20, 90);
-            ctx.fillText(`- Init Method: ${params.init_method}`, 20, 110);
-            ctx.fillText(`- Print Method: ${params.print_method}`, 20, 130);
-        });
-
-        // --- Tab 2: Image Viewer Logic ---
-        const filePicker = document.getElementById('file-picker');
-        const imageDisplay = document.getElementById('image-display');
-
-        filePicker.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    imageDisplay.src = e.target.result;
+            const payload = Object.fromEntries(formData.entries());
+            console.log('Enviando a backend:', payload);
+            fetch('generate_image', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Mostrar el botón de guardar imagen
+                document.getElementById('save-image-btn').style.display = 'inline-block';
+                // Mostrar la respuesta del backend para depuración
+                console.log('Respuesta backend:', data);
+                // Mostrar la imagen generada en el canvas
+                const img = new window.Image();
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
                 };
-                reader.readAsDataURL(file);
-            }
+                img.src = data.image_data;
+            })
+            .catch(error => {
+                alert('Error generando imagen: ' + error);
+            });
         });
+
+
     </script>
 </body>
 </html>

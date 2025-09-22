@@ -1,3 +1,10 @@
+## FIX
+
+~~~ bash 
+
+poetry run ruff check --fix . --unsafe-fixes
+
+~~~
 ## RUN app
 
 ~~~ bash

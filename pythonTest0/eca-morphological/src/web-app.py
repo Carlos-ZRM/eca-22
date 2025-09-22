@@ -3,9 +3,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from PIL import Image, ImageDraw, ImageFont
+from PIL import ImageDraw, ImageFont
 import io
 import base64
+import ca_class
+
 
 # Import the settings class from your new config file
 from src.config import AppSettings
@@ -48,22 +50,29 @@ async def generate_image(params: SimulationParams):
     Receives parameters, generates a placeholder image with the data written on it,
     and returns it as a Base64-encoded data URL.
     """
-    width, height = 400, 400
-    img = Image.new("RGB", (width, height), color="white")
-    draw = ImageDraw.Draw(img)
+    eca_rule_number = int(params.rule)
+
+    eca_size = int(params.cell_space)
+    eca_evolutions = int(params.num_evolutions)
+    eca_init_method = params.init_method
+    eca_print_method = params.print_method  
+
+    eca = ca_class.Eca(rule_number=eca_rule_number)
+    eca.define_evolution_config(
+        size=eca_size, evolutions=eca_evolutions, print_method=eca_print_method, init_method=eca_init_method
+    )
+    eca.evolution()
+    print(eca)
+    _width, _height = 400, 400
+    #img = Image.new("RGB", (width, height), color="white")
+    img = eca.print_history()
+    #print(img)
+    ImageDraw.Draw(img)
 
     try:
-        font = ImageFont.truetype("arial.ttf", 15)
+        ImageFont.truetype("arial.ttf", 15)
     except IOError:
-        font = ImageFont.load_default()
-
-    draw.text((10, 10), "Image Generated with Parameters:", fill="black", font=font)
-    draw.text((20, 40), f"- Rule: {params.rule}", fill="black", font=font)
-    draw.text((20, 60), f"- Cell Space: {params.cell_space}", fill="black", font=font)
-    draw.text((20, 80), f"- Evolutions: {params.num_evolutions}", fill="black", font=font)
-    draw.text((20, 100), f"- Init Method: {params.init_method}", fill="black", font=font)
-    draw.text((20, 120), f"- Print Method: {params.print_method}", fill="black", font=font)
-    draw.rectangle([0, 0, width - 1, height - 1], outline="black", width=2)
+        ImageFont.load_default()
 
     buffered = io.BytesIO()
     img.save(buffered, format="PNG")

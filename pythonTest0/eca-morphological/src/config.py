@@ -10,11 +10,9 @@ class AppSettings:
         "22",
     ]
     CELLULAR_AUTOMATA_INIT_METHODS = [
-        "Single Cell",
-        "Random",
-        "Seeds",
+        "single_cell",
+        "random",
     ]
     CELLULAR_AUTOMATA_PRINT_METHODS = [
-        "Pyplot",
-        "PIL",
+        "png"
     ]
