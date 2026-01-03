@@ -215,6 +215,8 @@ class Eca:
             return self.__print_pyplot()
         elif self.print_method == "png":
             return self._print_img()
+        elif self.print_method == "png_file":
+            return self._print_img(save_file=True)
         else:
             for step in self.history:
                 print(step)
@@ -225,7 +227,7 @@ class Eca:
         plt.title(f"Evolution of Rule {self.rule_number}")
         plt.show()
 
-    def _print_img(self):
+    def _print_img(self,save_file=False):
         file_name = f"CA_history_rule_{self.rule_number}.png"
         image_data = np.array(self.history)
         if self.cell_color_1 == 0:
@@ -235,7 +237,9 @@ class Eca:
             scaled_data = (image_data * 255).astype(np.uint8)
         image = Image.fromarray(scaled_data, mode="L")
         print(f"Image generated: {file_name}")
-        ##image.save(file_name)
+        if save_file:
+            self.image_file = file_name
+            image.save(file_name)
         return image
 
 def to_string(obj):

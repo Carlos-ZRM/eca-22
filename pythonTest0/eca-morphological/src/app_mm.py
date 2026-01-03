@@ -9,11 +9,14 @@ kernel_custom = np.array(
 )
 kernel_custom = np.array([[0, 1, 0], [1, 1, 1]], np.uint8)
 eca = ca_mm_class.EcaMm(rule_number=22)
-eca.define_evolution_config(size=50, evolutions=25, print_method="png")
+eca.define_evolution_config(size=50, evolutions=25, print_method="png_file")
 
 eca.set_kernel(kernel_custom)
 eca.set_iterations(2)
 eca.evolution()
+
+eca.print_history()
+
 eca.dilation()
 eca.erosion()
 eca.gradation()
