@@ -8,6 +8,10 @@ class AppSettings:
     CELLULAR_AUTOMATA_RULES = [
         "18",
         "22",
+        "30",
+        "54",
+        "90",
+        "110",
     ]
     CELLULAR_AUTOMATA_INIT_METHODS = [
         "single_cell",
