@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Backend Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .debug-box {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+        .error { border-left-color: #dc3545; }
+        .success { border-left-color: #28a745; }
+    </style>
+</head>
+<body>
+
+    <h1>Debug: Backend Data Test</h1>
+
+    <!-- Backend Data - exactly like in your app -->
+    <script>
+        const backendData = {
+            rules: {{ rules | tojson }},
+            init_methods: {{ init_methods | tojson }},
+            print_methods: {{ print_methods | tojson }}
+        };
+    </script>
+
+    <div id="debug-output"></div>
+
+    <script>
+        // Debug the data
+        const debugOutput = document.getElementById('debug-output');
+        
+        // Check if backendData exists
+        if (typeof backendData !== 'undefined') {
+            debugOutput.innerHTML += `
+                <div class="debug-box success">
+                    <h3>✓ backendData is defined</h3>
+                    <pre>${JSON.stringify(backendData, null, 2)}</pre>
+                </div>
+            `;
+        } else {
+            debugOutput.innerHTML += `
+                <div class="debug-box error">
+                    <h3>✗ backendData is NOT defined</h3>
+                    <p>Template variables were not rendered by Jinja2!</p>
+                </div>
+            `;
+        }
+
+        // Check each property
+        if (backendData.rules && backendData.rules.length > 0) {
+            debugOutput.innerHTML += `
+                <div class="debug-box success">
+                    <h3>✓ Rules loaded: ${backendData.rules.length} rules</h3>
+                    <pre>${JSON.stringify(backendData.rules, null, 2)}</pre>
+                </div>
+            `;
+        } else {
+            debugOutput.innerHTML += `
+                <div class="debug-box error">
+                    <h3>✗ Rules NOT loaded or empty</h3>
+                </div>
+            `;
+        }
+
+        if (backendData.init_methods && backendData.init_methods.length > 0) {
+            debugOutput.innerHTML += `
+                <div class="debug-box success">
+                    <h3>✓ Init Methods loaded: ${backendData.init_methods.length} methods</h3>
+                    <pre>${JSON.stringify(backendData.init_methods, null, 2)}</pre>
+                </div>
+            `;
+        } else {
+            debugOutput.innerHTML += `
+                <div class="debug-box error">
+                    <h3>✗ Init Methods NOT loaded or empty</h3>
+                </div>
+            `;
+        }
+
+        if (backendData.print_methods && backendData.print_methods.length > 0) {
+            debugOutput.innerHTML += `
+                <div class="debug-box success">
+                    <h3>✓ Print Methods loaded: ${backendData.print_methods.length} methods</h3>
+                    <pre>${JSON.stringify(backendData.print_methods, null, 2)}</pre>
+                </div>
+            `;
+        } else {
+            debugOutput.innerHTML += `
+                <div class="debug-box error">
+                    <h3>✗ Print Methods NOT loaded or empty</h3>
+                </div>
+            `;
+        }
+    </script>
+
+</body>
+</html>

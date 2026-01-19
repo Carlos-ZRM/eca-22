@@ -6,6 +6,8 @@ pyenv local 3.13
 
 ## Use poetry
 ~~~ bash
+
+
 poetry env list
 poetry env use python3.13
 ~~~

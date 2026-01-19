@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uvicorn App Preview</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <link rel="stylesheet" href="/static/styles-canva.css">
 </head>
 <body>
 
@@ -40,18 +39,25 @@
                     <select name="init_method" id="init-method-select"></select>
                 </div>
                 <div>
-                    <label for="cell-space-input">
-                        Cell Space
-                        <span class="info-icon" data-info="Size of the simulation grid in cells.">ⓘ</span>
+                    <label for="height-input">
+                        Height
+                        <span class="info-icon" data-info="Height of the simulation grid in cells.">ⓘ</span>
                     </label>
-                    <input type="number" id="cell-space-input" name="cell_space" value="300" required>
+                    <input type="number" id="height-input" name="height" value="300" required>
                 </div>
                 <div>
-                    <label for="num-evolutions-input">
-                        Evolutions
+                    <label for="width-input">
+                        Width
+                        <span class="info-icon" data-info="Width of the simulation grid in cells.">ⓘ</span>
+                    </label>
+                    <input type="number" id="width-input" name="width" value="300" required>
+                </div>
+                <div>
+                    <label for="iterations-input">
+                        Iterations
                         <span class="info-icon" data-info="Number of generations to simulate.">ⓘ</span>
                     </label>
-                    <input type="number" id="num-evolutions-input" name="num_evolutions" value="150" required>
+                    <input type="number" id="iterations-input" name="iterations" value="150" required>
                 </div>
                 <div id="density-container">
                     <label for="density-input">
@@ -86,16 +92,6 @@
     <!-- Info Popup Container -->
     <div id="info-popup"></div>
 
-    <!-- Backend Data - Keep inline to use Jinja2 template variables -->
-    <script>
-        const backendData = {
-            rules: {{ rules | tojson }},
-            init_methods: {{ init_methods | tojson }},
-            print_methods: {{ print_methods | tojson }}
-        };
-    </script>
-
     <script src="/static/script.js"></script>
-    <script src="/static/script-canva.js"></script>
 </body>
 </html>

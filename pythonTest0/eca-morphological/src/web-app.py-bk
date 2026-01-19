@@ -1,15 +1,14 @@
-import io
-import base64
-import ca_class
-
 import uvicorn
-
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+
 from pydantic import BaseModel
 from PIL import Image, ImageDraw, ImageFont
+import io
+import base64
+import ca_class
 
 
 # Import the settings class from your new config file
@@ -20,7 +19,6 @@ app = FastAPI()
 # Assume the templates directory is relative to the project root
 templates = Jinja2Templates(directory="templates")
 
-# Mount static files (CSS, JS, images, etc.)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
@@ -37,20 +35,6 @@ class SimulationParams(BaseModel):
 
 
 # --- API Endpoints ---
-
-
-@app.get("/debug", response_class=HTMLResponse)
-async def debug_page(request: Request):
-    """Debug page to check if backend data is being passed correctly."""
-    return templates.TemplateResponse(
-        "debug.html",
-        {
-            "request": request,
-            "rules": AppSettings.CELLULAR_AUTOMATA_RULES,
-            "init_methods": AppSettings.CELLULAR_AUTOMATA_INIT_METHODS,
-            "print_methods": AppSettings.CELLULAR_AUTOMATA_PRINT_METHODS,
-        },
-    )
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -70,8 +54,7 @@ async def read_root(request: Request):
 @app.post("/generate_image")
 async def generate_image(params: SimulationParams):
     """
-    Receives parameters, generates a CA evolution image,
-    and returns it as a Base64-encoded data URL.
+    Receives parameters, generates a CA evolution image, and returns it as a Base64-encoded data URL.
     """
     eca_rule_number = int(params.rule)
     eca_size = int(params.cell_space)
@@ -122,5 +105,5 @@ async def generate_image(params: SimulationParams):
     return {"image_data": img_data_url}
 
 if __name__ == "__main__":
-    # To run this file, use: uvicorn web-app:app --reload
+    # To run this file, use: uvicorn src.web-app:app --reload
     uvicorn.run(app, host="127.0.0.1", port=8000)
