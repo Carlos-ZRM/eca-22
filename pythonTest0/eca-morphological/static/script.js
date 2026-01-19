@@ -1,5 +1,14 @@
 console.log('🔍 script.js loaded');
 
+// ===========================
+// CANVAS ZOOM/PAN STATE
+// ===========================
+let canvasImage = null;
+let zoom = 1;
+let pan = { x: 0, y: 0 };
+let isDragging = false;
+let dragStart = { x: 0, y: 0 };
+
 // Check if backendData is available
 console.log('Checking backendData:', typeof backendData);
 if (typeof backendData !== 'undefined') {
@@ -12,7 +21,9 @@ if (typeof backendData !== 'undefined') {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🟢 DOMContentLoaded event fired');
     
-    // Safely get all elements with null checks
+    // ===========================
+    // GET DOM ELEMENTS
+    // ===========================
     const simForm = document.getElementById('param-form');
     const initMethodSelect = document.getElementById('init-method-select');
     const densityContainer = document.getElementById('density-container');
@@ -22,11 +33,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const infoPopup = document.getElementById('info-popup');
     const themeToggle = document.getElementById('theme-toggle');
     
+    // Canvas zoom/pan controls
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const zoomDisplay = document.getElementById('zoomDisplay');
+    
     console.log('Elements found:');
     console.log('  param-form:', simForm ? '✓' : '❌ NOT FOUND');
     console.log('  init-method-select:', initMethodSelect ? '✓' : '❌ NOT FOUND');
     console.log('  image-canvas:', canvas ? '✓' : '❌ NOT FOUND');
-    console.log('  save-image-btn:', saveBtn ? '✓' : '❌ NOT FOUND');
+    console.log('  zoom buttons:', (zoomInBtn && zoomOutBtn && resetBtn) ? '✓' : '❌ NOT FOUND');
     
     // Get canvas context only if canvas exists
     let ctx = null;
@@ -37,7 +54,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('❌ Canvas element not found! Cannot get 2D context');
     }
     
-    // === POPULATE DROPDOWNS ===
+    // ===========================
+    // POPULATE DROPDOWNS
+    // ===========================
     function populateSelect(selectId, options) {
         const select = document.getElementById(selectId);
         if (!select) {
@@ -71,7 +90,109 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Cannot populate dropdowns - backendData not defined');
     }
     
-    // === DENSITY FIELD TOGGLE ===
+    // ===========================
+    // CANVAS ZOOM/PAN DRAWING
+    // ===========================
+    function drawCanvasWithZoom() {
+        if (!canvasImage || !ctx) return;
+        
+        // Clear canvas
+        ctx.fillStyle = '#fdfdfd';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Save context state
+        ctx.save();
+        
+        // Translate to center, apply zoom and pan
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(zoom, zoom);
+        ctx.translate(pan.x / zoom, pan.y / zoom);
+        ctx.translate(-canvasImage.width / 2, -canvasImage.height / 2);
+        
+        // Draw image
+        ctx.drawImage(canvasImage, 0, 0);
+        
+        // Restore context state
+        ctx.restore();
+    }
+    
+    // ===========================
+    // ZOOM FUNCTIONS
+    // ===========================
+    function handleZoom(direction) {
+        const zoomStep = 0.2;
+        if (direction === 'in') {
+            zoom = Math.min(zoom + zoomStep, 5);
+        } else {
+            zoom = Math.max(zoom - zoomStep, 0.1);
+        }
+        updateZoomButtons();
+        drawCanvasWithZoom();
+    }
+    
+    function updateZoomButtons() {
+        if (zoomInBtn) zoomInBtn.disabled = !canvasImage || zoom >= 5;
+        if (zoomOutBtn) zoomOutBtn.disabled = !canvasImage || zoom <= 0.1;
+        if (resetBtn) resetBtn.disabled = !canvasImage;
+        if (zoomDisplay) zoomDisplay.textContent = `Zoom: ${(zoom * 100).toFixed(0)}%`;
+    }
+    
+    // Zoom button listeners
+    if (zoomInBtn) zoomInBtn.addEventListener('click', () => handleZoom('in'));
+    if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => handleZoom('out'));
+    
+    // Reset button
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            zoom = 1;
+            pan = { x: 0, y: 0 };
+            updateZoomButtons();
+            drawCanvasWithZoom();
+        });
+    }
+    
+    // Wheel zoom
+    if (canvas) {
+        canvas.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            const direction = e.deltaY < 0 ? 'in' : 'out';
+            handleZoom(direction);
+        }, { passive: false });
+    }
+    
+    // Pan with mouse
+    if (canvas) {
+        canvas.addEventListener('mousedown', function(e) {
+            if (!canvasImage) return;
+            isDragging = true;
+            dragStart = { x: e.clientX, y: e.clientY };
+        });
+        
+        canvas.addEventListener('mousemove', function(e) {
+            if (!isDragging || !canvasImage) return;
+            
+            const dx = e.clientX - dragStart.x;
+            const dy = e.clientY - dragStart.y;
+            
+            pan.x += dx;
+            pan.y += dy;
+            
+            dragStart = { x: e.clientX, y: e.clientY };
+            drawCanvasWithZoom();
+        });
+        
+        canvas.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('mouseleave', function() {
+            isDragging = false;
+        });
+    }
+    
+    // ===========================
+    // DENSITY FIELD TOGGLE
+    // ===========================
     function toggleDensity() {
         if (initMethodSelect && densityContainer) {
             if (initMethodSelect.value === 'random') {
@@ -111,7 +232,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // === SAVE IMAGE BUTTON ===
+    // ===========================
+    // SAVE IMAGE BUTTON
+    // ===========================
     if (saveBtn && canvas) {
         saveBtn.addEventListener('click', function() {
             const filename = 'simulacion.png';
@@ -123,7 +246,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // === FORM SUBMISSION ===
+    // ===========================
+    // FORM SUBMISSION
+    // ===========================
     if (simForm && canvas && ctx) {
         simForm.addEventListener('submit', (event) => {
             event.preventDefault();
@@ -154,10 +279,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const img = new window.Image();
                 img.onload = function() {
                     console.log('✓ Image loaded, drawing to canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0);
+                    canvasImage = img;
+                    zoom = 1;
+                    pan = { x: 0, y: 0 };
+                    updateZoomButtons();
+                    drawCanvasWithZoom();
                 };
                 img.onerror = function() {
                     console.error('Failed to load image data');
@@ -176,7 +302,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!ctx) console.error('  Missing: canvas 2D context');
     }
     
-    // === DARK MODE ===
+    // ===========================
+    // DARK MODE
+    // ===========================
     if (themeToggle) {
         themeToggle.addEventListener('change', () => {
             document.body.classList.toggle('dark-mode');
@@ -190,7 +318,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // === INFO POPUPS ===
+    // ===========================
+    // INFO POPUPS
+    // ===========================
     if (infoPopup) {
         document.addEventListener('mouseover', (event) => {
             if (event.target.classList.contains('info-icon')) {
@@ -218,10 +348,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Initialize zoom buttons state
+    updateZoomButtons();
+    
     console.log('✅ App initialization complete');
 });
 
-// === TAB MANAGEMENT ===
+// ===========================
+// TAB MANAGEMENT
+// ===========================
 function openTab(evt, tabName) {
     console.log('Opening tab:', tabName);
     const tabcontents = document.getElementsByClassName("tab-content");

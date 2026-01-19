@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uvicorn App Preview</title>
+    <title>Cellular Automata Simulator</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <link rel="stylesheet" href="/static/styles-canva.css">
 </head>
 <body>
 
@@ -35,7 +34,7 @@
                 <div>
                     <label for="init-method-select">
                         Init Method
-                        <span class="info-icon" data-info="Select the initialization method: 'single' for a single live cell, 'random' for random initialization.">ⓘ</span>
+                        <span class="info-icon" data-info="Select the initialization method: 'single_cell' for a single live cell, 'random' for random initialization.">ⓘ</span>
                     </label>
                     <select name="init_method" id="init-method-select"></select>
                 </div>
@@ -78,8 +77,27 @@
                 <button type="button" id="save-image-btn" style="display:none;">Guardar imagen</button>
             </form>
         </div>
-        <div id="right-panel" style="overflow:auto; max-height:80vh;">
-            <canvas id="image-canvas" style="width:100%; height:auto; display:block;"></canvas>
+        <div id="right-panel">
+            <!-- Canvas Controls -->
+            <div class="canvas-controls">
+                <div class="controls-group">
+                    <button id="zoomInBtn" class="btn-zoom-in" title="Zoom In (or scroll up)">
+                        <span>🔍+</span>
+                    </button>
+                    <button id="zoomOutBtn" class="btn-zoom-out" title="Zoom Out (or scroll down)">
+                        <span>🔍-</span>
+                    </button>
+                    <button id="resetBtn" class="btn-reset" title="Reset zoom and pan">
+                        <span>↻</span>
+                    </button>
+                </div>
+                <div class="zoom-display" id="zoomDisplay">Zoom: 100%</div>
+            </div>
+            
+            <!-- Canvas -->
+            <div class="canvas-container">
+                <canvas id="image-canvas" width="800" height="600"></canvas>
+            </div>
         </div>
     </div>
 
@@ -96,6 +114,5 @@
     </script>
 
     <script src="/static/script.js"></script>
-    <script src="/static/script-canva.js"></script>
 </body>
 </html>
