@@ -3,14 +3,14 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from PIL import ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 import io
 import base64
 import ca_class
 
 
 # Import the settings class from your new config file
-from src.config import AppSettings
+from config import AppSettings
 
 # --- Application Setup ---
 app = FastAPI()
@@ -25,6 +25,9 @@ class SimulationParams(BaseModel):
     num_evolutions: int
     init_method: str
     print_method: str
+    density: float = 0.5
+    pixel_size: int = 3
+      # Default pixel size value
 
 
 # --- API Endpoints ---
@@ -47,41 +50,55 @@ async def read_root(request: Request):
 @app.post("/generate_image")
 async def generate_image(params: SimulationParams):
     """
-    Receives parameters, generates a placeholder image with the data written on it,
-    and returns it as a Base64-encoded data URL.
+    Receives parameters, generates a CA evolution image, and returns it as a Base64-encoded data URL.
     """
     eca_rule_number = int(params.rule)
-
     eca_size = int(params.cell_space)
     eca_evolutions = int(params.num_evolutions)
     eca_init_method = params.init_method
-    eca_print_method = params.print_method  
-
+    eca_print_method = params.print_method
+    eca_density = float(params.density)
     eca = ca_class.Eca(rule_number=eca_rule_number)
     eca.define_evolution_config(
-        size=eca_size, evolutions=eca_evolutions, print_method=eca_print_method, init_method=eca_init_method
+        size=eca_size, 
+        evolutions=eca_evolutions, 
+        print_method=eca_print_method, 
+        init_method=eca_init_method
     )
+    
+    # If using random init method, pass the density to the init_random method
+    # This requires modifying the evolution method to accept density parameter
+    if eca_init_method == "random":
+        eca.init_state = eca.init_random(rdensity=eca_density)
+    
     eca.evolution()
     print(eca)
-    _width, _height = 400, 400
-    #img = Image.new("RGB", (width, height), color="white")
+    #pixel_size = 1
+    print("params", params)
+    pixel_size = params.pixel_size
+    eca.set_pixel_size(pixel_size)
     img = eca.print_history()
-    #print(img)
     ImageDraw.Draw(img)
 
+    if pixel_size > 1:
+        new_size = (img.width * pixel_size, img.height * pixel_size)
+        print("New size:", new_size)
+
+        img = img.resize(new_size, Image.NEAREST)
+    
     try:
         ImageFont.truetype("arial.ttf", 15)
     except IOError:
         ImageFont.load_default()
-
+    
     buffered = io.BytesIO()
+
     img.save(buffered, format="PNG")
 
     img_str = base64.b64encode(buffered.getvalue()).decode()
     img_data_url = f"data:image/png;base64,{img_str}"
 
     return {"image_data": img_data_url}
-
 
 if __name__ == "__main__":
     # To run this file, use: uvicorn src.web-app:app --reload

@@ -34,6 +34,12 @@ class Eca:
         # 90: lambda P, Q, R: A ^ C,
     }
 
+    def set_pixel_size(self, pixel_size):
+        self.pixel_size = pixel_size
+
+    def get_pixel_size(self):
+        return self.pixel_size
+    
     def __init__(self, rule_number=22):
         self.rule_number = rule_number
         self.size = None
@@ -43,7 +49,9 @@ class Eca:
         self.print_method = None
         self.init_state = None
         self.seed = None
-        self.cell_color_1 = 0  # default color black
+        self.cell_color_1 = 0 
+        self.pixel_size = 1
+         # default color black
 
     def define_evolution_config(
         self,
@@ -119,8 +127,9 @@ class Eca:
             np.ndarray: Initial state array with random values.
 
         """
-        return np.random.choice([0, 1], size=self.size, p=[rdensity, 1 - rdensity])
-
+        #return np.random.choice([0, 1], size=self.size, p=[rdensity, 1 - rdensity])
+        return (np.random.random(self.size) < rdensity).astype(int)
+    
     def init_seed(self, seed):
         """Initialize the cellular automaton with a seed string.
 
