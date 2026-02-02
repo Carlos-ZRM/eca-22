@@ -36,48 +36,57 @@ class FractalCountTriangle:
         rows, cols = self.binary_image.shape
         print(f"Image shape: {rows}x{cols}")
         list_lines = []
-        #for x in range(1):
-        for x in range(2):
-            print("Row:", x)
-            os.system('pause')
-            lista_indices = list(range(cols))
-            print("Lista indices: ",lista_indices, "longth:", len(lista_indices))
-            while len(lista_indices) > 1:
-                indice_ini = lista_indices[0]
-                if self.binary_image[x, indice_ini] != self.line_value_search:
-                    lista_indices = lista_indices.pop()
-                    indice_ini = indice_ini + 1
-                    continue
-                long_line = 1
-                indice_izq = indice_ini - 1
-                indice_der = indice_ini + 1
-                print("indice izq:", indice_izq)
-                print("lista indices len", lista_indices)
-                while indice_izq % len(lista_indices) in lista_indices:
-                    if self.binary_image[x, indice_izq] != self.line_value_search:
-                        indice_izq = indice_izq + 1
-                        break
-                    long_line += 1
-                    lista_indices.pop(indice_izq)
-                    indice_izq -= 1
-                    #print("Indice izq:", indice_izq, "length:", len(lista_indices))
-
-                while indice_der in lista_indices:
-                    if self.binary_image[x, indice_der] != self.line_value_search:
-                        indice_der = indice_der - 1
-                        break
-                    long_line += 1
-                    lista_indices.pop(indice_der)
-                    indice_der += 1
-                    print("Indice der:", indice_der, "length:", len(lista_indices))
-                
-                if indice_izq == indice_der:
-                    print("Point found at index:", indice_ini)
-                    lista_indices.pop(indice_ini)
+        for x in range(rows):
+        #for x in range(4,5):
+            y = 0
+            list_lines = []
+            while y < cols:
+                value = self.binary_image[x, y]
+                if value != self.line_value_search:
+                    ## its not a point of line
+                    y += 1
                 else:
-                    print(f"Line found from {indice_izq + 1} to {indice_der - 1}, length: {long_line}")
-                    list_lines.append((indice_izq + 1, indice_der - 1))
-                    #break
+                    line_start = y
+                    right_col = y + 1
+                    
+                    if right_col >= cols:
+                        line_end = y
+                        y += 1
+                    else:
+                        right_value = self.binary_image[x, right_col]
+                    
+                        ## right border condition
+                    while right_value == self.line_value_search and right_col < cols:
+                        y += 1
+                        print("y incremented to ", y)
+                        line_end = right_col
+                        right_col += 1
+                        if right_col < cols:
+                            right_value = self.binary_image[x, right_col]      
+                    if line_start != line_end:
+                        print(f"Line found at row {x}, from column {line_start} to {line_end}")
+                        if line_start == 0 and line_end == cols -1:
+                            print("Line spans the entire row")
+                            list_lines = [(line_start, line_end)]
+                        elif len(list_lines) > 0 and line_end == cols - 1:
+                            print("Line reaches the end of the row")
+                            
+                            #element = list_lines[0]
+                            element = list_lines[0]
+                            print("Previous line element:", element)
+                            if element[0] == 0:
+                                print("Merging with previous line")
+                                line_end= element[1]
+                                list_lines[0] = ( line_start, line_end)
+                            else:
+                                list_lines.append((line_start, line_end))
+                        else:
+                            list_lines.append((line_start, line_end))
+                        line_start = None
+                        y += 1
+
+
+
             self.histogram[x] = list_lines
             print(f"List of lines found {x}:", list_lines, "value search ", self.line_value_search)
         print("Final histogram of lines by row:", self.histogram)
@@ -207,18 +216,22 @@ class FractalCountTriangle:
     def draw_lines(self):
         img_result = Image.open(self.image_path).convert("RGBA")
         draw = ImageDraw.Draw(img_result)
-
+        rows, cols = self.binary_image.shape
         for x in self.histogram:
             for line in self.histogram[x]:
                 start_col, end_col = line
-                if start_col < 0:
-                    print("Error in start_col", start_col, ":", 49 + start_col)
-                    start_col = 49 + start_col
 
+                # if start_col < 0:
+                #     print("Error in start_col", start_col, ":", 49 + start_col)
+                #     start_col = 49 + start_col
+
+                #     draw.line([(0, x), (end_col, x)], fill="red", width=1)
+                #     draw.line([(start_col, x), (49, x)], fill="blue", width=1)
+                if start_col > end_col:
+                    print("Line with border lines ", start_col, end_col)
+                    draw.line([(start_col, x), (cols-1, x)], fill="red", width=1)
                     draw.line([(0, x), (end_col, x)], fill="red", width=1)
-                    draw.line([(start_col, x), (49, x)], fill="blue", width=1)
-
                 else:
-                    draw.line([(start_col, x), (end_col, x)], fill="red", width=2)
+                    draw.line([(start_col, x), (end_col, x)], fill="red", width=1)
                 # Draw the line at the appropriate position
         img_result.save("result_" + self.image_path)
