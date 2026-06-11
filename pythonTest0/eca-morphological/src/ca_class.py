@@ -5,6 +5,9 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(levelname)s - %(message)s')
 
 
 class Eca:
@@ -34,6 +37,19 @@ class Eca:
         # 90: lambda P, Q, R: A ^ C,
     }
 
+    @property
+    def rdensity(self):
+        return self._rdensity
+
+    @rdensity.setter
+    def rdensity(self, value):
+        if not (0.0 <= value <= 1.0):
+            raise ValueError("rdensity must be between 0.0 and 1.0")
+        self._rdensity = value
+        if self.size is not None:
+            self.logger.debug(f"Re-initializing state with rdensity {self._rdensity}")
+            self.init_random()
+
     def set_pixel_size(self, pixel_size):
         self.pixel_size = pixel_size
 
@@ -51,6 +67,8 @@ class Eca:
         self.seed = None
         self.cell_color_1 = 0 
         self.pixel_size = 1
+        self.rdensity = 0.001
+        self.logger = logging.getLogger(self.__class__.__name__)
          # default color black
 
     def define_evolution_config(
@@ -114,10 +132,11 @@ class Eca:
         """
         init_state = np.ones(self.size, dtype=np.uint8)
         init_state[self.size // 2] = 0
-        print(init_state)
+        self.logger.info(f"Initialized zero state: {init_state}")
         return init_state
 
-    def init_random(self, rdensity=0.5):
+    def init_random(self, rdensity=None):
+        
         """Initialize the cellular automaton with a random state.
 
         Args:
@@ -128,7 +147,16 @@ class Eca:
 
         """
         #return np.random.choice([0, 1], size=self.size, p=[rdensity, 1 - rdensity])
-        return (np.random.random(self.size) < rdensity).astype(int)
+        if rdensity is not None:
+            self.rdensity = rdensity
+        self.logger.debug(f"Initializing random state with rdensity {self.rdensity}")
+
+        arr = (np.random.random(self.size) < self.rdensity).astype(int)
+        num_ones = np.sum(arr)
+        
+        self.logger.debug(f"Number of ones in random array: {num_ones}")
+
+        return arr
     
     def init_seed(self, seed):
         """Initialize the cellular automaton with a seed string.
@@ -217,7 +245,7 @@ class Eca:
             self.history.append(current_array)
         # Measure the final time
         final_time = time.time()
-        print(f"Evolution execution time: {final_time - initial_time:.6f} seconds")
+        self.logger.debug(f"Evolution execution time: {final_time - initial_time:.6f} seconds")
         return self.history
 
     def print_history(self):
@@ -247,11 +275,13 @@ class Eca:
         else:
             scaled_data = (image_data * 255).astype(np.uint8)
         image = Image.fromarray(scaled_data, mode="L")
-        print(f"Image generated: {file_name}")
+        
+        self.logger.info(f"Image generated: {file_name}")
         if save_file:
             self.image_file = file_name
             image.save(file_name)
         return image
+
 
 def to_string(obj):
     """

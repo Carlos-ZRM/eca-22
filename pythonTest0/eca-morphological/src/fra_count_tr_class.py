@@ -1,6 +1,9 @@
+from random import random
 from PIL import Image, ImageDraw
 import numpy as np
-import os
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(name)s - %(levelname)s - %(message)s')
 
 
 class FractalCountTriangle:
@@ -11,30 +14,29 @@ class FractalCountTriangle:
         one_pixel_color=(255, 255, 255),
         zero_pixel_color=(0, 0, 0),
     ):
-        self.histogram = {}
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.histogram_lines = {}
         self.image_path = image_path
         self.one_pixel_color = one_pixel_color
         self.zero_pixel_color = zero_pixel_color
         self.binary_image = None
-        self.line_value_search = True
+        self.line_value_search = False
+        self.histogram_triangles = []
 
     def read_image(self):
         """Reads the image from the specified path and converts it to a binary format."""
         try:
             with Image.open(self.image_path) as img:
-                # img = img.convert("L")
-                # binary_image = np.array(img)
-                # self.binary_image = 1 - binary_image
                 self.binary_image = np.array(img)
                 # Create a binary image based on the specified colors
                 return self.binary_image
         except Exception as e:
-            print(f"Error reading image: {e}")
+            self.logger.error(f"Error reading image: {e}")
             return None
 
-    def count_triangles_for(self):
+    def count_lines_for(self):
         rows, cols = self.binary_image.shape
-        print(f"Image shape: {rows}x{cols}")
+        self.logger.debug(f"Image shape: {rows}x{cols}")
         list_lines = []
         for x in range(rows):
         #for x in range(4,5):
@@ -47,35 +49,35 @@ class FractalCountTriangle:
                     y += 1
                 else:
                     line_start = y
+                    line_end = y
                     right_col = y + 1
                     
                     if right_col >= cols:
+                        ## right border condition
                         line_end = y
                         y += 1
                     else:
                         right_value = self.binary_image[x, right_col]
                     
-                        ## right border condition
                     while right_value == self.line_value_search and right_col < cols:
                         y += 1
-                        print("y incremented to ", y)
+                        #print("y incremented to ", y)
                         line_end = right_col
                         right_col += 1
                         if right_col < cols:
-                            right_value = self.binary_image[x, right_col]      
-                    if line_start != line_end:
-                        print(f"Line found at row {x}, from column {line_start} to {line_end}")
+                            right_value = self.binary_image[x, right_col] 
+                    #print("Exited while at right_col ", right_col, " y=", y)     
+                    if line_start != line_end :
+                        #print(f"Line found at row {x}, from column {line_start} to {line_end}")
                         if line_start == 0 and line_end == cols -1:
-                            print("Line spans the entire row")
                             list_lines = [(line_start, line_end)]
                         elif len(list_lines) > 0 and line_end == cols - 1:
-                            print("Line reaches the end of the row")
+                            #print("Line reaches the end of the row")
                             
                             #element = list_lines[0]
                             element = list_lines[0]
-                            print("Previous line element:", element)
+                            
                             if element[0] == 0:
-                                print("Merging with previous line")
                                 line_end= element[1]
                                 list_lines[0] = ( line_start, line_end)
                             else:
@@ -84,14 +86,13 @@ class FractalCountTriangle:
                             list_lines.append((line_start, line_end))
                         line_start = None
                         y += 1
+                    else:
+                        #print("Point found at ", y)
+                        y += 1
 
-
-
-            self.histogram[x] = list_lines
-            print(f"List of lines found {x}:", list_lines, "value search ", self.line_value_search)
-        print("Final histogram of lines by row:", self.histogram)
-
-
+            self.histogram_lines[x] = list_lines
+            self.logger.debug(f"List of lines found {x}: {list_lines}, value search {self.line_value_search}")
+        self.logger.info(f"Final histogram of lines by row: {self.histogram_lines}")
 
     def count_triangles(self):
         rows, cols = self.binary_image.shape
@@ -119,10 +120,10 @@ class FractalCountTriangle:
                         list_lines.append((line_start, line_end))
                     else:
                         visited_j[j] = 1
-            self.histogram[x] = list_lines
+            self.histogram_lines[x] = list_lines
             # print(f"List of lines found {x}:", list_lines, "value search ", self.line_value_search)
             x += 1
-        print("Final histogram of lines by row:", self.histogram)
+        print("Final histogram of lines by row:", self.histogram_lines)
 
     def find_line(self, row, col):
         """
@@ -217,8 +218,8 @@ class FractalCountTriangle:
         img_result = Image.open(self.image_path).convert("RGBA")
         draw = ImageDraw.Draw(img_result)
         rows, cols = self.binary_image.shape
-        for x in self.histogram:
-            for line in self.histogram[x]:
+        for x in self.histogram_lines:
+            for line in self.histogram_lines[x]:
                 start_col, end_col = line
 
                 # if start_col < 0:
@@ -228,10 +229,89 @@ class FractalCountTriangle:
                 #     draw.line([(0, x), (end_col, x)], fill="red", width=1)
                 #     draw.line([(start_col, x), (49, x)], fill="blue", width=1)
                 if start_col > end_col:
-                    print("Line with border lines ", start_col, end_col)
+                    #print("Line with border lines ", start_col, end_col)
                     draw.line([(start_col, x), (cols-1, x)], fill="red", width=1)
                     draw.line([(0, x), (end_col, x)], fill="red", width=1)
                 else:
                     draw.line([(start_col, x), (end_col, x)], fill="red", width=1)
                 # Draw the line at the appropriate position
         img_result.save("result_" + self.image_path)
+
+    def count_triangles_for(self):
+        # Implement the logic to count lines based on the histogram of lines
+        lines = self.histogram_lines.copy()
+        rows, cols = self.binary_image.shape
+        for x in lines:
+            triangle_lines = []
+            list_lines = lines[x]
+            for line in list_lines:
+                is_triangle = True
+                triangle_lines.append(line)
+                start_line = line[0]
+                end_line = line[1]
+                if end_line > start_line:
+                    base = end_line - start_line
+                    self.logger.info(f"Line found at row {x}, from column {start_line} to {end_line}")
+                else:
+                    base = (cols - start_line) + end_line
+                    self.logger.info(f"Line with border found at row {x}, from column {start_line} to {end_line}")
+
+                is_pair = True if base % 2 == 0 else False
+
+                if is_pair:
+                    height = base // 2
+                    area = height * (height + 1)
+                else:
+                    height = (base + 1) // 2
+                    area = height * height
+                
+                for h in range(x , x+ height - 1):
+                    next_start = (start_line + h) % cols
+                    next_end = (end_line - h) % cols
+                    next__line = (next_start, next_end)
+                    self.logger.info(f"Checking for triangle at row {h+1}, expected line: {next__line}")
+                    if h + 1 >= rows:
+                        self.logger.info(f"Reached the end of the image at row {h+1}, stopping triangle check.")
+                        is_triangle = False
+                        break
+                    if next__line not in lines[h+1]:
+                        is_triangle = False
+                        break
+                    else:
+                        triangle_lines.append(next__line)
+                        lines[h+1].remove(next__line)
+                if is_triangle:
+
+                    self.logger.info(f"Triangle found with base {base} and height {height} at row {x} and first line {line}")
+                    triangle = { "base": base, "height": height, "lines": triangle_lines , "area": area, "row": x}
+                    self.histogram_triangles.append(triangle)
+                
+
+
+    def draw_triangles(self):
+        img_result = Image.open(self.image_path).convert("RGBA")
+        draw = ImageDraw.Draw(img_result)
+        rows, cols = self.binary_image.shape
+        for triangle in self.histogram_triangles:
+            x = triangle["row"]
+            lines = triangle["lines"]
+            r = int(random() * 256)
+            g = int(random() * 256)
+            b = int(random() * 256)
+            for line in lines:
+                start_col, end_col = line
+
+                # if start_col < 0:
+                #     print("Error in start_col", start_col, ":", 49 + start_col)
+                #     start_col = 49 + start_col
+
+                #     draw.line([(0, x), (end_col, x)], fill="red", width=1)
+                #     draw.line([(start_col, x), (49, x)], fill="blue", width=1)
+                if start_col > end_col:
+                    #print("Line with border lines ", start_col, end_col)
+                    draw.line([(start_col, x), (cols-1, x)], fill=(r, g, b), width=1)
+                    draw.line([(0, x), (end_col, x)], fill=(r, g, b), width=1)
+                else:
+                    draw.line([(start_col, x), (end_col, x)], fill=(r, g, b), width=1)
+                # Draw the line at the appropriate position
+        img_result.save("result_triangle_" + self.image_path)
