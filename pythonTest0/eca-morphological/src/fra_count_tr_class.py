@@ -35,15 +35,19 @@ class FractalCountTriangle:
             return None
 
     def count_lines_for(self):
+        # Get the dimensions of the binary image
         rows, cols = self.binary_image.shape
         self.logger.debug(f"Image shape: {rows}x{cols}")
         list_lines = []
         for x in range(rows):
         #for x in range(4,5):
+            # Set the starting column index for the current row
             y = 0
+            # Set the list of lines for the current row to an empty list
             list_lines = []
             while y < cols:
                 value = self.binary_image[x, y]
+                # Check if the current pixel value is different from the line value we are searching for
                 if value != self.line_value_search:
                     ## its not a point of line
                     y += 1

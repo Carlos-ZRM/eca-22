@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cellular Automata Simulator</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/styles.css?v=3">
 </head>
 <body>
 
@@ -22,7 +22,7 @@
 
     <!-- Tab 1: Simulation -->
     <div id="Simulation" class="tab-content main-content" style="display: flex;">
-        <div id="left-menu">
+        <div id="left-menu" class="tab-left-panel">
             <h2>Parameters</h2>
             <form id="param-form">
                 <div>
@@ -78,7 +78,7 @@
                 <button type="button" id="save-image-btn" style="display:none;">Guardar imagen</button>
             </form>
         </div>
-        <div id="right-panel">
+        <div id="right-panel" class="tab-right-panel">
             <!-- Canvas Controls -->
             <div class="canvas-controls">
                 <div class="controls-group">
@@ -102,9 +102,64 @@
         </div>
     </div>
     <!-- Tab 2: Morphological -->
-    <div id="Morphological" class="tab-content" style="display: none;">
-        
-    </div>
+    <div id="Morphological" class="tab-content main-content" style="display: none;">
+        <div id="morph-left-menu" class="tab-left-panel">
+            <h2>Morphological Operations</h2>
+            <form id="morph-form" onsubmit="handleMorphSubmit(event)">
+                <div>
+                    <label for="morph-operation-select">
+                        Operation
+                        <span class="info-icon" data-info="Select the morphological operation to apply.">ⓘ</span>
+                    </label>
+                    <select name="operation" id="morph-operation-select">
+                        {% for op in morphology_operations %}
+                        <option value="{{ op }}">{{ op }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="morph-kernel-select">
+                        Kernel
+                        <span class="info-icon" data-info="Structuring element used for the morphological operation.">ⓘ</span>
+                    </label>
+                    <select name="kernel" id="morph-kernel-select">
+                        {% for k in kernel_options %}
+                        <option value="{{ k }}">{{ k }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="morph-iterations-input">
+                        Iterations
+                        <span class="info-icon" data-info="Number of times to apply the operation.">ⓘ</span>
+                    </label>
+                    <input type="number" id="morph-iterations-input" name="iterations" value="1" min="1" required>
+                </div>
+                <button type="submit">Apply</button>
+                <button type="button" onclick="copySimulationToMorphCanvas()" style="background-color: #9333ea;">↺ Reset</button>
+                <button type="button" onclick="saveMorphImage()" style="background-color: #16a34a;">⬇ Save Image</button>
+            </form>
+        </div>
+        <div id="morph-right-panel" class="tab-right-panel">
+            <div class="canvas-controls">
+                <div class="controls-group">
+                    <button id="zoomInBtnMorph" class="btn-zoom-in" title="Zoom In (or scroll up)">
+                        <span>🔍+</span>
+                    </button>
+                    <button id="zoomOutBtnMorph" class="btn-zoom-out" title="Zoom Out (or scroll down)">
+                        <span>🔍-</span>
+                    </button>
+                    <button id="resetBtnMorph" class="btn-reset" title="Reset zoom and pan">
+                        <span>↻</span>
+                    </button>
+                </div>
+                <div class="zoom-display" id="zoomDisplayMorph">Zoom: 100%</div>
+            </div>
+            <div class="canvas-container">
+                <canvas id="morph-canvas" width="800" height="600"></canvas>
+            </div>
+        </div>  <!-- closes morph-right-panel -->
+    </div>  <!-- closes #Morphological -->
     <!-- Info Popup Container -->
     <div id="info-popup"></div>
 
@@ -113,8 +168,73 @@
         const backendData = {
             rules: {{ rules | tojson }},
             init_methods: {{ init_methods | tojson }},
-            print_methods: {{ print_methods | tojson }}
+            print_methods: {{ print_methods | tojson }},
+            morphology_operations: {{ morphology_operations | tojson }},
+            kernel_options: {{ kernel_options | tojson }}
         };
+
+        function copySimulationToMorphCanvas() {
+            const srcCanvas = document.getElementById('image-canvas');
+            if (!srcCanvas) return;
+            // Load the simulation canvas into an Image so the morph zoom/pan
+            // system (window.morphSetImage, defined in script.js) can own it.
+            const img = new Image();
+            img.onload = function () {
+                if (window.morphSetImage) window.morphSetImage(img);
+            };
+            img.src = srcCanvas.toDataURL('image/png');
+        }
+
+        function openTab(evt, tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
+            const tabElement = document.getElementById(tabName);
+            if (tabElement) tabElement.style.display = 'flex';
+            evt.currentTarget.classList.add('active');
+            if (tabName === 'Morphological') copySimulationToMorphCanvas();
+        }
+
+        async function generateMorphologicalTransformation(operation, kernel, iterations) {
+            const morphCanvas = document.getElementById('morph-canvas');
+            if (!morphCanvas) { console.error('morph-canvas not found'); return; }
+
+            const imageData = morphCanvas.toDataURL('image/png');
+            try {
+                const response = await fetch('/generate_morphological', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image_data: imageData, operation, kernel, iterations })
+                });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const data = await response.json();
+                const img = new Image();
+                img.onload = function () {
+                    if (window.morphSetImage) window.morphSetImage(img);
+                };
+                img.src = data.image_data;
+            } catch (err) {
+                console.error('Morphological error:', err);
+                alert('Error applying morphological operation: ' + err);
+            }
+        }
+
+        function handleMorphSubmit(event) {
+            event.preventDefault();
+            const operation = document.getElementById('morph-operation-select').value;
+            const kernel    = document.getElementById('morph-kernel-select').value;
+            const iterations = parseInt(document.getElementById('morph-iterations-input').value, 10);
+            generateMorphologicalTransformation(operation, kernel, iterations);
+        }
+
+        function saveMorphImage() {
+            const canvas = document.getElementById('morph-canvas');
+            if (!canvas) return;
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'morphological_' + Date.now() + '.png';
+            a.click();
+        }
     </script>
 
     <script src="/static/script.js"></script>

@@ -119,7 +119,10 @@ input:checked + .slider:before {
     height: 100%;
 }
 
-#left-menu {
+/* Shared layout — applied via class on both tabs */
+.tab-left-panel,
+#left-menu,
+#morph-left-menu {
     width: 280px;
     padding: 20px;
     background-color: var(--content-bg-color);
@@ -130,7 +133,9 @@ input:checked + .slider:before {
     overflow-y: auto;
 }
 
-#right-panel {
+.tab-right-panel,
+#right-panel,
+#morph-right-panel {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -299,20 +304,42 @@ body.dark-mode .info-icon {
     line-height: 1.4;
 }
 
-/* Scrollbar styling for left menu */
-#left-menu::-webkit-scrollbar {
+/* Scrollbar styling for left panels */
+.tab-left-panel::-webkit-scrollbar,
+#left-menu::-webkit-scrollbar,
+#morph-left-menu::-webkit-scrollbar {
     width: 8px;
 }
 
-#left-menu::-webkit-scrollbar-track {
+.tab-left-panel::-webkit-scrollbar-track,
+#left-menu::-webkit-scrollbar-track,
+#morph-left-menu::-webkit-scrollbar-track {
     background: transparent;
 }
 
-#left-menu::-webkit-scrollbar-thumb {
+.tab-left-panel::-webkit-scrollbar-thumb,
+#left-menu::-webkit-scrollbar-thumb,
+#morph-left-menu::-webkit-scrollbar-thumb {
     background: var(--border-color);
     border-radius: 4px;
 }
 
-#left-menu::-webkit-scrollbar-thumb:hover {
+.tab-left-panel::-webkit-scrollbar-thumb:hover,
+#left-menu::-webkit-scrollbar-thumb:hover,
+#morph-left-menu::-webkit-scrollbar-thumb:hover {
     background: var(--accent-color);
+}
+
+#morph-canvas {
+    border: 2px solid var(--border-color);
+    background-color: #fdfdfd;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+    cursor: grab;
+}
+
+#morph-canvas:active {
+    cursor: grabbing;
 }

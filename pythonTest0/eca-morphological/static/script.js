@@ -1,13 +1,22 @@
 console.log('🔍 script.js loaded');
 
 // ===========================
-// CANVAS ZOOM/PAN STATE
+// CANVAS ZOOM/PAN STATE — Simulation tab
 // ===========================
 let canvasImage = null;
 let zoom = 1;
 let pan = { x: 0, y: 0 };
 let isDragging = false;
 let dragStart = { x: 0, y: 0 };
+
+// ===========================
+// CANVAS ZOOM/PAN STATE — Morphological tab
+// ===========================
+let morphCanvasImage = null;
+let morphZoom = 1;
+let morphPan = { x: 0, y: 0 };
+let morphIsDragging = false;
+let morphDragStart = { x: 0, y: 0 };
 
 // Check if backendData is available
 console.log('Checking backendData:', typeof backendData);
@@ -83,9 +92,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Populate dropdowns if backendData exists
     if (typeof backendData !== 'undefined') {
         console.log('Populating dropdowns from backendData...');
+        // Simulation tab dropdowns — populated via JS from backendData
         populateSelect('rule-select', backendData.rules);
         populateSelect('init-method-select', backendData.init_methods);
         populateSelect('print-method-select', backendData.print_methods);
+        // Morphological tab dropdowns — rendered server-side by Jinja2 (see index.html)
     } else {
         console.error('Cannot populate dropdowns - backendData not defined');
     }
@@ -350,28 +361,98 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize zoom buttons state
     updateZoomButtons();
-    
+
+    // ===========================
+    // MORPH CANVAS ZOOM/PAN
+    // ===========================
+    const morphCanvas = document.getElementById('morph-canvas');
+    const morphCtx = morphCanvas ? morphCanvas.getContext('2d') : null;
+    const zoomInBtnMorph  = document.getElementById('zoomInBtnMorph');
+    const zoomOutBtnMorph = document.getElementById('zoomOutBtnMorph');
+    const resetBtnMorph   = document.getElementById('resetBtnMorph');
+    const zoomDisplayMorph = document.getElementById('zoomDisplayMorph');
+
+    function drawMorphCanvasWithZoom() {
+        if (!morphCanvasImage || !morphCtx) return;
+        morphCtx.fillStyle = '#fdfdfd';
+        morphCtx.fillRect(0, 0, morphCanvas.width, morphCanvas.height);
+        morphCtx.save();
+        morphCtx.translate(morphCanvas.width / 2, morphCanvas.height / 2);
+        morphCtx.scale(morphZoom, morphZoom);
+        morphCtx.translate(morphPan.x / morphZoom, morphPan.y / morphZoom);
+        morphCtx.translate(-morphCanvasImage.width / 2, -morphCanvasImage.height / 2);
+        morphCtx.drawImage(morphCanvasImage, 0, 0);
+        morphCtx.restore();
+    }
+
+    function updateMorphZoomButtons() {
+        if (zoomInBtnMorph)  zoomInBtnMorph.disabled  = !morphCanvasImage || morphZoom >= 5;
+        if (zoomOutBtnMorph) zoomOutBtnMorph.disabled = !morphCanvasImage || morphZoom <= 0.1;
+        if (resetBtnMorph)   resetBtnMorph.disabled   = !morphCanvasImage;
+        if (zoomDisplayMorph) zoomDisplayMorph.textContent = `Zoom: ${(morphZoom * 100).toFixed(0)}%`;
+    }
+
+    function handleMorphZoom(direction) {
+        if (direction === 'in') morphZoom = Math.min(morphZoom + 0.2, 5);
+        else                    morphZoom = Math.max(morphZoom - 0.2, 0.1);
+        updateMorphZoomButtons();
+        drawMorphCanvasWithZoom();
+    }
+
+    // Expose so inline script functions (copySimulationToMorphCanvas,
+    // generateMorphologicalTransformation) can hand images into the zoom/pan system
+    window.morphSetImage = function(img) {
+        morphCanvasImage = img;
+        morphZoom = 1;
+        morphPan  = { x: 0, y: 0 };
+        if (morphCanvas) {
+            morphCanvas.width  = img.width;
+            morphCanvas.height = img.height;
+        }
+        updateMorphZoomButtons();
+        drawMorphCanvasWithZoom();
+    };
+
+    if (zoomInBtnMorph)  zoomInBtnMorph.addEventListener('click',  () => handleMorphZoom('in'));
+    if (zoomOutBtnMorph) zoomOutBtnMorph.addEventListener('click', () => handleMorphZoom('out'));
+    if (resetBtnMorph) {
+        resetBtnMorph.addEventListener('click', function () {
+            morphZoom = 1;
+            morphPan  = { x: 0, y: 0 };
+            updateMorphZoomButtons();
+            drawMorphCanvasWithZoom();
+        });
+    }
+
+    if (morphCanvas) {
+        morphCanvas.addEventListener('wheel', function (e) {
+            e.preventDefault();
+            handleMorphZoom(e.deltaY < 0 ? 'in' : 'out');
+        }, { passive: false });
+
+        morphCanvas.addEventListener('mousedown', function (e) {
+            if (!morphCanvasImage) return;
+            morphIsDragging = true;
+            morphDragStart  = { x: e.clientX, y: e.clientY };
+        });
+        morphCanvas.addEventListener('mousemove', function (e) {
+            if (!morphIsDragging || !morphCanvasImage) return;
+            morphPan.x += e.clientX - morphDragStart.x;
+            morphPan.y += e.clientY - morphDragStart.y;
+            morphDragStart = { x: e.clientX, y: e.clientY };
+            drawMorphCanvasWithZoom();
+        });
+        morphCanvas.addEventListener('mouseup',    () => { morphIsDragging = false; });
+        morphCanvas.addEventListener('mouseleave', () => { morphIsDragging = false; });
+    }
+
+    updateMorphZoomButtons();
+
+    // Morphological form submit is handled inline in index.html (handleMorphSubmit / generateMorphologicalTransformation)
+
     console.log('✅ App initialization complete');
 });
 
-// ===========================
-// TAB MANAGEMENT
-// ===========================
-function openTab(evt, tabName) {
-    console.log('Opening tab:', tabName);
-    const tabcontents = document.getElementsByClassName("tab-content");
-    for (let i = 0; i < tabcontents.length; i++) {
-        tabcontents[i].style.display = "none";
-    }
-    const tablinks = document.getElementsByClassName("tab-link");
-    for (let i = 0; i < tablinks.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" active", "");
-    }
-    const tabElement = document.getElementById(tabName);
-    if (tabElement) {
-        tabElement.style.display = "flex";
-    }
-    evt.currentTarget.className += " active";
-}
+// TAB MANAGEMENT is defined inline in index.html
 
 console.log('✅ script.js fully loaded');

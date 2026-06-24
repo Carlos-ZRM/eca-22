@@ -9,9 +9,9 @@ kernel_custom = np.array(
 )
 kernel_custom = np.array([[0, 1, 0], [1, 1, 1]], np.uint8)
 eca = ca_mm_class.EcaMm(rule_number=22)
-#eca.define_evolution_config(size=1024, evolutions=2048, print_method="png_file", init_method="single_cell", )
+eca.define_evolution_config(size=10, evolutions=10, print_method="png_file", init_method="single_cell", )
 
-eca.define_evolution_config(size=1000, evolutions=1000, print_method="png_file", init_method="random", )
+#eca.define_evolution_config(size=10, evolutions=10, print_method="png_file", init_method="random", )
 
 
 

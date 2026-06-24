@@ -2,6 +2,8 @@ import io
 import base64
 import ca_class
 
+import cv2
+import numpy as np
 import uvicorn
 
 from fastapi import FastAPI, Request
@@ -13,7 +15,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 # Import the settings class from your new config file
-from config import AppSettings
+from config import AppSettings, MorphologySettings
 
 # --- Application Setup ---
 app = FastAPI()
@@ -24,7 +26,14 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-# --- Pydantic Model for Input Validation ---
+# --- Pydantic Models for Input Validation ---
+class MorphologicalParams(BaseModel):
+    image_data: str       # base64 data URL from canvas
+    operation: str        # dilation | erosion | gradation | blackhat
+    kernel: str           # small | large
+    iterations: int = 1
+
+
 class SimulationParams(BaseModel):
     rule: str
     cell_space: int
@@ -63,6 +72,8 @@ async def read_root(request: Request):
             "rules": AppSettings.CELLULAR_AUTOMATA_RULES,
             "init_methods": AppSettings.CELLULAR_AUTOMATA_INIT_METHODS,
             "print_methods": AppSettings.CELLULAR_AUTOMATA_PRINT_METHODS,
+            "morphology_operations": MorphologySettings.MORPHOLOGY_OPERATIONS,
+            "kernel_options": list(MorphologySettings.KERNEL_OPTIONS.keys()),
         },
     )
 
@@ -104,9 +115,7 @@ async def generate_image(params: SimulationParams):
     if pixel_size > 1:
         new_size = (img.width * pixel_size, img.height * pixel_size)
         print("New size:", new_size)
-
         img = img.resize(new_size, Image.NEAREST)
-    
     try:
         ImageFont.truetype("arial.ttf", 15)
     except IOError:
@@ -121,6 +130,43 @@ async def generate_image(params: SimulationParams):
 
     return {"image_data": img_data_url}
 
+@app.post("/generate_morphological")
+async def generate_morphological(params: MorphologicalParams):
+    """
+    Receives a base64 canvas image and morphological parameters,
+    applies the selected operation via OpenCV, and returns the result
+    as a Base64-encoded data URL.
+    """
+    # Decode base64 image from canvas
+    header, encoded = params.image_data.split(",", 1)
+    img_bytes = base64.b64decode(encoded)
+    np_arr = np.frombuffer(img_bytes, np.uint8)
+    img = cv2.imdecode(np_arr, cv2.IMREAD_GRAYSCALE)
+
+    print("Morphological operation:", params.operation)
+    kernel = MorphologySettings.KERNEL_OPTIONS.get(params.kernel, MorphologySettings.KERNEL_SMALL)
+    iterations = max(1, params.iterations)
+
+    if params.operation == "dilation":
+        result = cv2.dilate(img, kernel, iterations=iterations)
+    elif params.operation == "erosion":
+        result = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel, iterations=iterations)
+    elif params.operation == "gradation":
+        result = cv2.morphologyEx(img, cv2.MORPH_GRADIENT, kernel, iterations=iterations)
+    elif params.operation == "blackhat":
+        result = cv2.morphologyEx(img, cv2.MORPH_BLACKHAT, kernel, iterations=iterations)
+    else:
+        result = img
+
+    _, buffer = cv2.imencode(".png", result)
+    img_str = base64.b64encode(buffer).decode()
+    img_data_url = f"data:image/png;base64,{img_str}"
+
+    return {"image_data": img_data_url}
+
+
 if __name__ == "__main__":
-    # To run this file, use: uvicorn web-app:app --reload
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    # Run options (both include timestamps via log_config.json):
+    #   python web-app.py
+    #   uvicorn web-app:app --reload --log-config log_config.json
+    uvicorn.run(app, host="127.0.0.1", port=8000, log_config="log_config.json")
