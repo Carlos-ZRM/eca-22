@@ -3,7 +3,7 @@ from PIL import Image, ImageDraw
 import numpy as np
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(name)s - %(levelname)s - %(message)s')
 
 
 class FractalCountTriangle:
@@ -39,71 +39,70 @@ class FractalCountTriangle:
         rows, cols = self.binary_image.shape
         self.logger.debug(f"Image shape: {rows}x{cols}")
         list_lines = []
-        for x in range(rows):
-        #for x in range(9,14):
+        #for x in range(rows):
+        for x in range(10,14):
             # Set the starting column index for the current row
             y = 0
             # Set the list of lines for the current row to an empty list
             list_lines = []
-            self.logger.debug(f"Processing row {x}")
-            line_start = None
-            line_end = None
+            self.logger.info(f"Processing row {x}")
             while y < cols:
                 # Get the value of the current pixel in the binary image
                 value = self.binary_image[x, y]
-                self.logger.debug(f" |Processing pixel at ({x}, {y}): {value}")
+                self.logger.info(f"    |Processing pixel at ({x}, {y}): {value}")
                 # Check if the current pixel value is different from the line value we are searching for
-
-                if value == self.line_value_search:
-
+                if value != self.line_value_search:
+                    ## its not a point of line
+                    y += 1
+                    self.logger.debug(f"        |Pixel at ({x}, {y}) is not part of a line. Moving to next pixel.")
+                else:
+                    # Found a pixel that matches the line value we are searching for, so we need to find the start and end of the line
                     line_start = y
                     line_end = y
-                    self.logger.debug(f"     || y value {y} {value}")
-                    # Increment y to continue searching for the end of the line
-                    y += 1
-                    while y < cols and (line_end is not None) :
-                        next_value = self.binary_image[x, y]
-                        self.logger.debug(f"     || yy value {y} {next_value}")
-                        if next_value == self.line_value_search:
-                            # If next pixel is the same as the line value, update the end of the line
-                            line_end = y
-                        else:
-                            # 1. Check if is a single point
-                            # If next pixel is different, we have found the end of the line or a single point
-                            if line_start == line_end:
-                                self.logger.debug(f"     ||Found a single point at ({x}, {y}, {next_value})")
-                            else:
-                            # 2, Check end of line on right side right pixel is different) 
-                                self.logger.debug(f"     ||Found a line from ({x}, {line_start}) to ({x}, {line_end})")
-                                self.logger.debug(f"     ||End line at {y} ")
-                                list_lines.append((line_start, line_end))
-                            line_start = None
-                            line_end = None
-                        y += 1
-                    if line_start is not None and line_end is cols - 1:
-                        self.logger.debug(f"     ||Found a line from ({x}, {line_start}) to ({x}, {line_end})")
-                        self.logger.debug(f"     ||End line at {y} ")
-                        list_lines.append((line_start, line_end))
+                    # Set the right and left column indices for the current pixel
+                    right_col = y + 1
+                    left_col = y - 1
+
+
+                    if right_col < cols:
+                        right_value = self.binary_image[x, right_col]
+
+                    #     ## right border condition
+                    #     line_end = y
+                    #     #y += 1
+                    # else:
+                    #     right_value = self.binary_image[x, right_col]
+                    
+                    while right_value == self.line_value_search and right_col <= cols:
                         
-                    y += 1
-                y += 1
-
+                        #print("y incremented to ", y)
+                        line_end = right_col
+                        right_col += 1
+                        if right_col < cols:
+                            right_value = self.binary_image[x, right_col]
+                        y += 1
                     
-                    # Found a pixel that matches the line value we are searching for, so we need to find the start and end of the line
-
-            # Check end line conditions.
-            if len(list_lines) > 0:
-                self.logger.debug(f"            ||| Checking for wrap-around lines in row {x}: {list_lines}")
-                first_line = list_lines[0] if list_lines else None
-                last_line = list_lines[-1] if list_lines else None
-                if first_line[0] == 0 and last_line[1] == cols - 1:
-                    self.logger.debug(f"     ||Found a line that wraps around the row {x}: {first_line} to {last_line}")
-                    # Merge the first and last lines into a single line
-                    merged_line = (last_line[0], first_line[1])
-                    list_lines = [merged_line] + list_lines[1:-1]
-                    self.logger.debug(f"     ||Merged line: {merged_line}")
-
                     
+                    if line_start != line_end :
+                        #print(f"Line found at row {x}, from column {line_start} to {line_end}")
+                        if line_start == 0 and line_end == cols -1:
+                            list_lines = [(line_start, line_end)]
+                        elif len(list_lines) > 0 and line_end == cols - 1:
+                            element = list_lines[0]
+                            if element[0] == 0:
+                                line_end= element[1]
+                                list_lines[0] = ( line_start, line_end)
+                            else:
+                                list_lines.append((line_start, line_end))
+                        else:
+                            list_lines.append((line_start, line_end))
+                        line_start = None
+                        #y += 1
+                    else:
+                        self.logger.info(f"Point found at row {x}, column {line_start}")
+                        #print("Point found at ", y)
+                        y += 1
+
             self.histogram_lines[x] = list_lines
             self.logger.debug(f"List of lines found {x}: {list_lines}, value search {self.line_value_search}")
         self.logger.info(f"Final histogram of lines by row: {self.histogram_lines}")
@@ -259,7 +258,6 @@ class FractalCountTriangle:
         rows, cols = self.binary_image.shape
         # Iterate through each row in the histogram of lines
         for x in lines:
-            self.logger.debug(f"Processing line {x} ")
             triangle_lines = []
             list_lines = lines[x]
             
