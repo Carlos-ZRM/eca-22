@@ -278,7 +278,8 @@ class FractalCountTriangle:
             
             for line in list_lines:
                 is_triangle = True
-                triangle_lines.append(line)
+                #
+                #triangle_lines.append(line)
                 # Determine the start and end columns of the line
                 start_line_y = line[0]
                 end_line_y = line[1]
@@ -327,12 +328,15 @@ class FractalCountTriangle:
                         is_triangle = False
                         break
                     else:
+                        print("NEXT LINE "+ str(next__line))
                         triangle_lines.append(next__line)
                         lines[h+1].remove(next__line)
                     xx += 1
                 if is_triangle:
+                    print("FIRST LINE"+ str(line))
+                    triangle_lines.insert(0,line)
                     self.logger.info(f"Triangle found with base {base} and height {height} at row {x} and first line {triangle_lines[0]}")
-                    triangle = { "base": base, "height": height, "lines": triangle_lines , "area": area, "row": x}
+                    triangle =  { "base": base, "height": height, "lines": triangle_lines , "area": area, "row": x}
                     self.histogram_triangles.append(triangle)
                 
         self.logger.info(f"Total triangles found: {len(self.histogram_triangles)}")
