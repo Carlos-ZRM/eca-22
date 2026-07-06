@@ -22,6 +22,7 @@ class FractalCountTriangle:
         self.binary_image = None
         self.line_value_search = False
         self.histogram_triangles = []
+        self.histogram_colors = {}
 
     def read_image(self):
         """Reads the image from the specified path and converts it to a binary format."""
@@ -102,6 +103,17 @@ class FractalCountTriangle:
                     merged_line = (last_line[0], first_line[1])
                     list_lines = [merged_line] + list_lines[1:-1]
                     self.logger.debug(f"     ||Merged line: {merged_line}")
+                elif  last_line[1] == cols - 1 and  self.binary_image[x, 0] == self.line_value_search:
+                    self.logger.debug(f"     ||Found a line that wraps around the row {x}: 0 to {last_line}")
+                    merged_line = (last_line[0], 0)
+                    list_lines = [merged_line] + list_lines[1:-1]
+                    self.logger.debug(f"     ||Merged line: {merged_line}")
+                #elif first_line[0] == 0 and  self.binary_image[x,  cols - 1] == self.line_value_search:
+                #    self.logger.debug(f"     ||Found a line that wraps around the row {x}: 0 to {last_line}")
+                #    merged_line = ( cols - 1 ,first_line[0])
+                #    list_lines = [merged_line] + list_lines[1:-1]
+                #    self.logger.debug(f"     ||Merged line: {merged_line}")
+                
 
                     
             self.histogram_lines[x] = list_lines
@@ -257,6 +269,7 @@ class FractalCountTriangle:
         lines = self.histogram_lines.copy()
         # Get the dimensions of the binary image
         rows, cols = self.binary_image.shape
+        self.logger.debug(f"SHAPE")
         # Iterate through each row in the histogram of lines
         for x in lines:
             self.logger.debug(f"Processing line {x} ")
@@ -274,7 +287,7 @@ class FractalCountTriangle:
                 else:
                     base = (cols - start_line_y) + end_line_y
                 
-                self.logger.info(f"Line found at row {x}, from column {start_line_y} to {end_line_y}")
+                self.logger.info(f"Line found at row {x}, from column {start_line_y} to {end_line_y} with base {base}")
 
 
                 is_pair = True if base % 2 == 0 else False
@@ -288,23 +301,29 @@ class FractalCountTriangle:
                     area = height * height
                 xx = 1
                 # For to check if the next lines in the subsequent rows form a triangle with the current line
+                self.logger.debug("+++++++++++++++++++++++++++")
                 for h in range(x , x+ height - 1):
                     self.logger.info(f" h {h}")
                     # Check follow up lines in the next rows to see if they form a triangle with the current line
-                    
                     if start_line_y < end_line_y:
-                        next_start = (start_line_y + xx) % cols
-                        next_end = (end_line_y - xx) % cols
+                        next_start = (start_line_y + xx )  % cols
+                        next_end = (end_line_y - xx  )  % cols
                     else:
-                        next_start = (start_line_y - xx) % cols
-                        next_end = (end_line_y + xx) % cols
+                        next_start = (start_line_y + xx )  % cols 
+                        next_end = (end_line_y - xx  )  % cols 
+                    self.logger.debug(f"    {h} , {xx} | current lines {start_line_y} {end_line_y} | {next_start} {next_end} ")
+
+                    
                     next__line = (next_start, next_end)
                     self.logger.info(f"Checking for triangle at row {h+1}, expected line: {next__line}")
                     if h + 1 >= rows:
                         self.logger.info(f"Reached the end of the image at row {h+1}, stopping triangle check.")
-                        is_triangle = False
+                        if h - x >= 2 :
+                            is_triangle = True
+                        else:
+                            is_triangle = False
                         break
-                    if next__line not in lines[h+1]:
+                    if next__line not in lines[h+1]  :
                         is_triangle = False
                         break
                     else:
@@ -324,12 +343,19 @@ class FractalCountTriangle:
         rows, cols = self.binary_image.shape
         for triangle in self.histogram_triangles:
             self.logger.info(f"Triangle details: {triangle}")
+            area = str(triangle["area"])
+            if area in self.histogram_colors:
+                color = self.histogram_colors[area]
+            else:
+                r = int(random() * 256)
+                g = int(random() * 256)
+                b = int(random() * 256)
+                color = (r,g,b)
+                self.histogram_colors[area]= color
 
             x = triangle["row"]
             lines = triangle["lines"]
-            r = int(random() * 256)
-            g = int(random() * 256)
-            b = int(random() * 256)
+            
             for line in lines:
                 start_col, end_col = line
 
@@ -341,10 +367,12 @@ class FractalCountTriangle:
                 #     draw.line([(start_col, x), (49, x)], fill="blue", width=1)
                 if start_col > end_col:
                     #print("Line with border lines ", start_col, end_col)
-                    draw.line([(start_col, x), (cols-1, x)], fill=(r, g, b), width=1)
-                    draw.line([(0, x), (end_col, x)], fill=(r, g, b), width=1)
+                    draw.line([(start_col, x), (cols-1, x)], fill=color, width=1)
+                    draw.line([(0, x), (end_col, x)], fill=color, width=1)
                 else:
-                    draw.line([(start_col, x), (end_col, x)], fill=(r, g, b), width=1)
+                    draw.line([(start_col, x), (end_col, x)], fill=color, width=1)
                 # Draw the line at the appropriate position
                 x = x + 1
         img_result.save("result_triangle_" + self.image_path)
+    
+

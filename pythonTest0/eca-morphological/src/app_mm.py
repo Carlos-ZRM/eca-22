@@ -10,16 +10,16 @@ kernel_custom = np.array(
 kernel_custom = np.array([[0, 1, 0], [1, 1, 1]], np.uint8)
 eca = ca_mm_class.EcaMm(rule_number=22)
 
-#eca.define_evolution_config(size=17, evolutions=17, print_method="png_file", init_method="single_cell", )
-#eca.define_evolution_config(size=100, evolutions=100, print_method="png_file", init_method="single_cell", )
+#eca.define_evolution_config(size=80, evolutions=25, print_method="png_file", init_method="single_cell", )
+#eca.define_evolution_config(size=100, evolutions=50, print_method="png_file", init_method="random", )
 
-eca.define_evolution_config(size=500, evolutions=1000, print_method="png_file", init_method="random", )
+eca.define_evolution_config(size=60, evolutions=25, print_method="png_file", init_method="seed", seed="000000000000000000001111" )
 
 
 
 eca.set_kernel(kernel_custom)
 eca.set_iterations(2)
-eca.rdensity = 0.2
+eca.rdensity = 0.1
 eca.evolution()
 
 eca.print_history()

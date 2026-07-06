@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(name)s - %(levelname)s - %(message)s')
 
 
 class Eca:
@@ -240,12 +240,13 @@ class Eca:
         # Create current array
         current_array = start_array
         # Iterate through the specified number of evolutions
-        for _ in range(self.evolutions):
+        for _ in range(self.evolutions -1 ):
             current_array = self.next_evolution(current_array)
             self.history.append(current_array)
         # Measure the final time
         final_time = time.time()
         self.logger.debug(f"Evolution execution time: {final_time - initial_time:.6f} seconds")
+        
         return self.history
 
     def print_history(self):
