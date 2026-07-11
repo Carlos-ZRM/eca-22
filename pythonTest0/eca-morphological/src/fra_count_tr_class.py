@@ -314,7 +314,6 @@ class FractalCountTriangle:
                         next_end = (end_line_y - xx  )  % cols 
                     self.logger.debug(f"    {h} , {xx} | current lines {start_line_y} {end_line_y} | {next_start} {next_end} ")
 
-                    
                     next__line = (next_start, next_end)
                     self.logger.info(f"Checking for triangle at row {h+1}, expected line: {next__line}")
                     if h + 1 >= rows:
@@ -332,7 +331,7 @@ class FractalCountTriangle:
                         triangle_lines.append(next__line)
                         lines[h+1].remove(next__line)
                     xx += 1
-                if is_triangle:
+                if is_triangle and len(triangle_lines) > 0:
                     print("FIRST LINE"+ str(line))
                     triangle_lines.insert(0,line)
                     self.logger.info(f"Triangle found with base {base} and height {height} at row {x} and first line {triangle_lines[0]}")
