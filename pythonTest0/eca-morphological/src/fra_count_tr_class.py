@@ -337,6 +337,7 @@ class FractalCountTriangle:
                     self.logger.info(f"Triangle found with base {base} and height {height} at row {x} and first line {triangle_lines[0]}")
                     triangle =  { "base": base, "height": height, "lines": triangle_lines , "area": area, "row": x}
                     self.histogram_triangles.append(triangle)
+                    triangle_lines = []
                 
         self.logger.info(f"Total triangles found: {len(self.histogram_triangles)}")
 
