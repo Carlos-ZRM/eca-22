@@ -32,6 +32,7 @@ class MorphologicalParams(BaseModel):
     operation: str        # dilation | erosion | gradation | blackhat
     kernel: str           # small | large
     iterations: int = 1
+    pixel_size: int = 1
 
 
 class SimulationParams(BaseModel):
@@ -104,31 +105,30 @@ async def generate_image(params: SimulationParams):
         eca.init_state = eca.init_random(rdensity=eca_density)
     
     eca.evolution()
-    print(eca)
-    #pixel_size = 1
-    print("params", params)
-    pixel_size = params.pixel_size
-    eca.set_pixel_size(pixel_size)
-    img = eca.print_history()
-    ImageDraw.Draw(img)
 
+    pixel_size = max(1, min(15, params.pixel_size))
+
+    # Generate raw image (pixel_size=1) — used as input for morphological ops
+    eca.set_pixel_size(1)
+    img_raw = eca.print_history()
+
+    # Scale for display
     if pixel_size > 1:
-        new_size = (img.width * pixel_size, img.height * pixel_size)
-        print("New size:", new_size)
-        img = img.resize(new_size, Image.NEAREST)
-    try:
-        ImageFont.truetype("arial.ttf", 15)
-    except IOError:
-        ImageFont.load_default()
-    
-    buffered = io.BytesIO()
+        img_display = img_raw.resize(
+            (img_raw.width * pixel_size, img_raw.height * pixel_size), Image.NEAREST
+        )
+    else:
+        img_display = img_raw
 
-    img.save(buffered, format="PNG")
+    def to_data_url(img):
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
-    img_str = base64.b64encode(buffered.getvalue()).decode()
-    img_data_url = f"data:image/png;base64,{img_str}"
-
-    return {"image_data": img_data_url}
+    return {
+        "image_data": to_data_url(img_display),
+        "raw_image_data": to_data_url(img_raw),
+    }
 
 @app.post("/generate_morphological")
 async def generate_morphological(params: MorphologicalParams):
@@ -146,6 +146,7 @@ async def generate_morphological(params: MorphologicalParams):
     print("Morphological operation:", params.operation)
     kernel = MorphologySettings.KERNEL_OPTIONS.get(params.kernel, MorphologySettings.KERNEL_SMALL)
     iterations = max(1, params.iterations)
+    pixel_size = max(1, min(15, params.pixel_size))
 
     if params.operation == "dilation":
         result = cv2.dilate(img, kernel, iterations=iterations)
@@ -158,11 +159,26 @@ async def generate_morphological(params: MorphologicalParams):
     else:
         result = img
 
-    _, buffer = cv2.imencode(".png", result)
-    img_str = base64.b64encode(buffer).decode()
-    img_data_url = f"data:image/png;base64,{img_str}"
+    # raw result (pixel_size=1) — sent back so the client can chain operations correctly
+    raw_pil = Image.fromarray(result)
 
-    return {"image_data": img_data_url}
+    # scaled result for display
+    if pixel_size > 1:
+        display_pil = raw_pil.resize(
+            (raw_pil.width * pixel_size, raw_pil.height * pixel_size), Image.NEAREST
+        )
+    else:
+        display_pil = raw_pil
+
+    def to_data_url(img):
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+    return {
+        "image_data": to_data_url(display_pil),
+        "raw_image_data": to_data_url(raw_pil),
+    }
 
 
 if __name__ == "__main__":

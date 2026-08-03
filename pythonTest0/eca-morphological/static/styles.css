@@ -270,6 +270,43 @@ button:hover {
     background-color: var(--accent-hover-color);
 }
 
+/* Pixel-size stepper */
+.stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.stepper input[type="number"] {
+    flex: 1;
+    text-align: center;
+    border-radius: 0;
+    -moz-appearance: textfield;
+}
+
+.stepper input[type="number"]::-webkit-inner-spin-button,
+.stepper input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.stepper-btn {
+    width: 36px;
+    min-width: 36px;
+    padding: 10px 0;
+    margin-top: 0;
+    font-size: 18px;
+    line-height: 1;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.stepper-btn:first-child { border-radius: 4px 0 0 4px; }
+.stepper-btn:last-child  { border-radius: 0 4px 4px 0; }
+
 .info-icon {
     display: inline-flex;
     justify-content: center;

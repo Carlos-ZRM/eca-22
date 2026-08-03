@@ -85,7 +85,10 @@ class FractalCountTriangle:
                         self.logger.debug(f"     ||Found a line from ({x}, {line_start}) to ({x}, {line_end})")
                         self.logger.debug(f"     ||End line at {y} ")
                         list_lines.append((line_start, line_end))
-                        
+                    elif line_start is not None and line_end == (cols - 1):
+                        self.logger.debug(f"     ||Found a line from ({x}, {line_start}) to ({x}, {line_end})")
+                        self.logger.debug(f"     ||End line at {y} ")
+                        list_lines.append((line_start, line_end))
                     y += 1
                 y += 1
 

@@ -12,6 +12,7 @@
     <div class="tab-bar">
         <button class="tab-link active" onclick="openTab(event, 'Simulation')">Simulation</button>
         <button class="tab-link" onclick="openTab(event, 'Morphological')">Morphological</button>
+        <button class="tab-link" onclick="openTab(event, 'Filters')">Filters</button>
         <div class="theme-switch-wrapper">
             <label class="theme-switch" for="theme-toggle">
                 <input type="checkbox" id="theme-toggle" />
@@ -72,7 +73,11 @@
                         Pixel Size
                         <span class="info-icon" data-info="Sets the size of each cell in pixels for the output image.">ⓘ</span>
                     </label>
-                    <input type="number" id="pixel-size-input" name="pixel_size" value="1" required>
+                    <div class="stepper">
+                        <button type="button" class="stepper-btn" onclick="stepPixelSize(-1, 'pixel-size-input')">−</button>
+                        <input type="number" id="pixel-size-input" name="pixel_size" value="1" min="1" max="15" required>
+                        <button type="button" class="stepper-btn" onclick="stepPixelSize(1, 'pixel-size-input')">+</button>
+                    </div>
                 </div>
                 <button type="submit">Send</button>
                 <button type="button" id="save-image-btn" style="display:none;">Guardar imagen</button>
@@ -135,6 +140,17 @@
                     </label>
                     <input type="number" id="morph-iterations-input" name="iterations" value="1" min="1" required>
                 </div>
+                <div>
+                    <label for="morph-pixel-size-input">
+                        Pixel Size
+                        <span class="info-icon" data-info="Sets the size of each cell in pixels for the output image.">ⓘ</span>
+                    </label>
+                    <div class="stepper">
+                        <button type="button" class="stepper-btn" onclick="stepPixelSize(-1, 'morph-pixel-size-input')">−</button>
+                        <input type="number" id="morph-pixel-size-input" name="pixel_size" value="1" min="1" max="15" required>
+                        <button type="button" class="stepper-btn" onclick="stepPixelSize(1, 'morph-pixel-size-input')">+</button>
+                    </div>
+                </div>
                 <button type="submit">Apply</button>
                 <button type="button" onclick="copySimulationToMorphCanvas()" style="background-color: #9333ea;">↺ Reset</button>
                 <button type="button" onclick="saveMorphImage()" style="background-color: #16a34a;">⬇ Save Image</button>
@@ -160,6 +176,48 @@
             </div>
         </div>  <!-- closes morph-right-panel -->
     </div>  <!-- closes #Morphological -->
+
+    <!-- Tab 3: Filters -->
+    <div id="Filters" class="tab-content main-content" style="display: none;">
+        <div id="filters-left-menu" class="tab-left-panel">
+            <h2>Filters</h2>
+            <form id="filters-form" onsubmit="handleFiltersSubmit(event)">
+                <div>
+                    <label for="filters-pixel-size-input">
+                        Pixel Size
+                        <span class="info-icon" data-info="Sets the size of each cell in pixels for the output image.">ⓘ</span>
+                    </label>
+                    <div class="stepper">
+                        <button type="button" class="stepper-btn" onclick="stepPixelSize(-1, 'filters-pixel-size-input')">−</button>
+                        <input type="number" id="filters-pixel-size-input" name="pixel_size" value="1" min="1" max="15" required>
+                        <button type="button" class="stepper-btn" onclick="stepPixelSize(1, 'filters-pixel-size-input')">+</button>
+                    </div>
+                </div>
+                <button type="submit">Apply</button>
+                <button type="button" onclick="showHistogram()" style="background-color: #0891b2;">📊 Show Histogram</button>
+            </form>
+        </div>
+        <div id="filters-right-panel" class="tab-right-panel">
+            <div class="canvas-controls">
+                <div class="controls-group">
+                    <button id="zoomInBtnFilters" class="btn-zoom-in" title="Zoom In (or scroll up)">
+                        <span>🔍+</span>
+                    </button>
+                    <button id="zoomOutBtnFilters" class="btn-zoom-out" title="Zoom Out (or scroll down)">
+                        <span>🔍-</span>
+                    </button>
+                    <button id="resetBtnFilters" class="btn-reset" title="Reset zoom and pan">
+                        <span>↻</span>
+                    </button>
+                </div>
+                <div class="zoom-display" id="zoomDisplayFilters">Zoom: 100%</div>
+            </div>
+            <div class="canvas-container">
+                <canvas id="filters-canvas" width="800" height="600"></canvas>
+            </div>
+        </div>  <!-- closes filters-right-panel -->
+    </div>  <!-- closes #Filters -->
+
     <!-- Info Popup Container -->
     <div id="info-popup"></div>
 
@@ -173,14 +231,71 @@
             kernel_options: {{ kernel_options | tojson }}
         };
 
+        // --- Global pixel size shared across all sections ---
+        window.globalPixelSize = 1;
+        window.rawSimImage     = null;  // unscaled sim image, input for morph/filter ops
+        window.morphRawImage   = null;  // unscaled result of last morph op (chains correctly)
+        window.filtersRawImage = null;  // unscaled image shown in the Filters tab
+
+        // Every pixel-size input that must stay in sync
+        window.PIXEL_SIZE_INPUTS = [
+            'pixel-size-input',
+            'morph-pixel-size-input',
+            'filters-pixel-size-input'
+        ];
+
+        function syncPixelSize(sourceId) {
+            const input = document.getElementById(sourceId);
+            let value = parseInt(input.value, 10) || 1;
+            value = Math.max(1, Math.min(15, value));
+            input.value = value;
+            window.globalPixelSize = value;
+            window.PIXEL_SIZE_INPUTS.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && id !== sourceId) el.value = value;
+            });
+            // Re-render all canvases with the new pixel size immediately
+            if (typeof window.applyPixelSizeToCanvases === 'function') {
+                window.applyPixelSizeToCanvases();
+            }
+        }
+
+        function stepPixelSize(delta, sourceId) {
+            const input = document.getElementById(sourceId);
+            input.value = (parseInt(input.value, 10) || 1) + delta;
+            syncPixelSize(sourceId);
+        }
+
         function copySimulationToMorphCanvas() {
+            // Reset morphRawImage to the raw sim image so morph ops start clean
+            if (window.rawSimImage) {
+                window.morphRawImage = window.rawSimImage;
+            }
             const srcCanvas = document.getElementById('image-canvas');
             if (!srcCanvas) return;
-            // Load the simulation canvas into an Image so the morph zoom/pan
-            // system (window.morphSetImage, defined in script.js) can own it.
             const img = new Image();
             img.onload = function () {
                 if (window.morphSetImage) window.morphSetImage(img);
+            };
+            img.src = srcCanvas.toDataURL('image/png');
+        }
+
+        function copyMorphToFiltersCanvas() {
+            // Filters starts from the Morphological result; if no morphological
+            // operation has run yet, fall back to the raw simulation image.
+            const rawSource = window.morphRawImage || window.rawSimImage;
+            if (!rawSource) return;
+            window.filtersRawImage = rawSource;
+
+            // Prefer the morph canvas pixels; fall back to the simulation canvas
+            const srcCanvas = (window.morphRawImage
+                ? document.getElementById('morph-canvas')
+                : document.getElementById('image-canvas'));
+            if (!srcCanvas) return;
+
+            const img = new Image();
+            img.onload = function () {
+                if (window.filtersSetImage) window.filtersSetImage(img);
             };
             img.src = srcCanvas.toDataURL('image/png');
         }
@@ -192,21 +307,27 @@
             if (tabElement) tabElement.style.display = 'flex';
             evt.currentTarget.classList.add('active');
             if (tabName === 'Morphological') copySimulationToMorphCanvas();
+            if (tabName === 'Filters')       copyMorphToFiltersCanvas();
         }
 
-        async function generateMorphologicalTransformation(operation, kernel, iterations) {
-            const morphCanvas = document.getElementById('morph-canvas');
-            if (!morphCanvas) { console.error('morph-canvas not found'); return; }
+        async function generateMorphologicalTransformation(operation, kernel, iterations, pixel_size = 1) {
+            // Always operate on the unscaled raw image so pixel_size is applied cleanly
+            const imageData = window.morphRawImage;
+            if (!imageData) { alert('No simulation image available. Generate one first.'); return; }
 
-            const imageData = morphCanvas.toDataURL('image/png');
             try {
                 const response = await fetch('/generate_morphological', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image_data: imageData, operation, kernel, iterations })
+                    body: JSON.stringify({ image_data: imageData, operation, kernel, iterations, pixel_size })
                 });
                 if (!response.ok) throw new Error('HTTP ' + response.status);
                 const data = await response.json();
+
+                // Store the raw (unscaled) result for chaining future operations
+                window.morphRawImage = data.raw_image_data;
+
+                // Display the scaled result on the morph canvas
                 const img = new Image();
                 img.onload = function () {
                     if (window.morphSetImage) window.morphSetImage(img);
@@ -220,10 +341,28 @@
 
         function handleMorphSubmit(event) {
             event.preventDefault();
-            const operation = document.getElementById('morph-operation-select').value;
-            const kernel    = document.getElementById('morph-kernel-select').value;
+            const operation  = document.getElementById('morph-operation-select').value;
+            const kernel     = document.getElementById('morph-kernel-select').value;
             const iterations = parseInt(document.getElementById('morph-iterations-input').value, 10);
-            generateMorphologicalTransformation(operation, kernel, iterations);
+            generateMorphologicalTransformation(operation, kernel, iterations, window.globalPixelSize);
+        }
+
+        // ---------- Filters tab ----------
+
+        // Apply button — placeholder, implement the filter pipeline here
+        function handleFiltersSubmit(event) {
+            event.preventDefault();
+            applyFilter();
+        }
+
+        function applyFilter() {
+            // TODO: implement filter logic
+            console.log('applyFilter() — not implemented yet. pixel size:', window.globalPixelSize);
+        }
+
+        function showHistogram() {
+            // TODO: implement histogram rendering
+            console.log('showHistogram() — not implemented yet.');
         }
 
         function saveMorphImage() {
@@ -237,6 +376,6 @@
         }
     </script>
 
-    <script src="/static/script.js"></script>
+    <script src="/static/script.js?v=6"></script>
 </body>
 </html>

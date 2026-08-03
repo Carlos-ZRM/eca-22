@@ -18,6 +18,15 @@ let morphPan = { x: 0, y: 0 };
 let morphIsDragging = false;
 let morphDragStart = { x: 0, y: 0 };
 
+// ===========================
+// CANVAS ZOOM/PAN STATE — Filters tab
+// ===========================
+let filtersCanvasImage = null;
+let filtersZoom = 1;
+let filtersPan = { x: 0, y: 0 };
+let filtersIsDragging = false;
+let filtersDragStart = { x: 0, y: 0 };
+
 // Check if backendData is available
 console.log('Checking backendData:', typeof backendData);
 if (typeof backendData !== 'undefined') {
@@ -267,6 +276,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const formData = new FormData(simForm);
             const payload = Object.fromEntries(formData.entries());
+            // Use the shared global value so both sections are always in sync
+            payload.pixel_size = window.globalPixelSize || 1;
             console.log('Sending payload:', payload);
             
             fetch('/generate_image', {
@@ -286,7 +297,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 console.log('✓ Image data received from backend');
                 if (saveBtn) saveBtn.style.display = 'inline-block';
-                
+
+                // Store raw (unscaled) image for morphological operations
+                window.rawSimImage   = data.raw_image_data;
+                window.morphRawImage = data.raw_image_data;
+
                 const img = new window.Image();
                 img.onload = function() {
                     console.log('✓ Image loaded, drawing to canvas');
@@ -320,12 +335,18 @@ document.addEventListener('DOMContentLoaded', function() {
         themeToggle.addEventListener('change', () => {
             document.body.classList.toggle('dark-mode');
             const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            // localStorage can throw (private mode / blocked site data) — must not
+            // abort the rest of initialization
+            try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
         });
-        
-        if (localStorage.getItem('theme') === 'dark') {
-            document.body.classList.add('dark-mode');
-            themeToggle.checked = true;
+
+        try {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+                themeToggle.checked = true;
+            }
+        } catch (e) {
+            console.warn('localStorage unavailable, skipping theme restore');
         }
     }
     
@@ -361,6 +382,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize zoom buttons state
     updateZoomButtons();
+
+    // ===========================
+    // GLOBAL PIXEL SIZE SYNC
+    // ===========================
+    // Wire every pixel-size input listed by the template (sim / morph / filters)
+    const pixelInputIds = window.PIXEL_SIZE_INPUTS ||
+        ['pixel-size-input', 'morph-pixel-size-input', 'filters-pixel-size-input'];
+
+    pixelInputIds.forEach(function (id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', function () {
+            if (typeof syncPixelSize === 'function') syncPixelSize(id);
+        });
+    });
 
     // ===========================
     // MORPH CANVAS ZOOM/PAN
@@ -399,8 +435,14 @@ document.addEventListener('DOMContentLoaded', function() {
         drawMorphCanvasWithZoom();
     }
 
-    // Expose so inline script functions (copySimulationToMorphCanvas,
-    // generateMorphologicalTransformation) can hand images into the zoom/pan system
+    // Expose so inline/external code can push images into each canvas's zoom/pan system
+    // Sim canvas keeps its fixed size; the image is centred/zoomed inside it
+    window.simSetImage = function(img) {
+        canvasImage = img;
+        updateZoomButtons();
+        drawCanvasWithZoom();
+    };
+
     window.morphSetImage = function(img) {
         morphCanvasImage = img;
         morphZoom = 1;
@@ -412,6 +454,38 @@ document.addEventListener('DOMContentLoaded', function() {
         updateMorphZoomButtons();
         drawMorphCanvasWithZoom();
     };
+
+    // Re-scale a raw data URL by pixel_size using a temp canvas (nearest-neighbour)
+    function scaleRawImage(dataUrl, pixelSize, callback) {
+        const src = new window.Image();
+        src.onload = function() {
+            const tmp = document.createElement('canvas');
+            tmp.width  = src.width  * pixelSize;
+            tmp.height = src.height * pixelSize;
+            const tmpCtx = tmp.getContext('2d');
+            tmpCtx.imageSmoothingEnabled = false;
+            tmpCtx.drawImage(src, 0, 0, tmp.width, tmp.height);
+            const out = new window.Image();
+            out.onload = function() { callback(out); };
+            out.src = tmp.toDataURL('image/png');
+        };
+        src.src = dataUrl;
+    }
+
+    // Called by syncPixelSize / stepPixelSize to refresh every canvas immediately
+    window.applyPixelSizeToCanvases = function() {
+        const ps = window.globalPixelSize || 1;
+        if (!window.rawSimImage && !window.morphRawImage && !window.filtersRawImage) {
+            console.warn('Pixel size changed but no image generated yet — press Send first.');
+            return;
+        }
+        if (window.rawSimImage)     scaleRawImage(window.rawSimImage,     ps, window.simSetImage);
+        if (window.morphRawImage)   scaleRawImage(window.morphRawImage,   ps, window.morphSetImage);
+        // filtersSetImage is defined later in this handler; resolved at call time
+        if (window.filtersRawImage) scaleRawImage(window.filtersRawImage, ps, window.filtersSetImage);
+    };
+
+    console.log('✓ Pixel-size canvas handlers registered');
 
     if (zoomInBtnMorph)  zoomInBtnMorph.addEventListener('click',  () => handleMorphZoom('in'));
     if (zoomOutBtnMorph) zoomOutBtnMorph.addEventListener('click', () => handleMorphZoom('out'));
@@ -449,6 +523,90 @@ document.addEventListener('DOMContentLoaded', function() {
     updateMorphZoomButtons();
 
     // Morphological form submit is handled inline in index.html (handleMorphSubmit / generateMorphologicalTransformation)
+
+    // ===========================
+    // FILTERS CANVAS ZOOM/PAN
+    // ===========================
+    const filtersCanvas = document.getElementById('filters-canvas');
+    const filtersCtx = filtersCanvas ? filtersCanvas.getContext('2d') : null;
+    const zoomInBtnFilters   = document.getElementById('zoomInBtnFilters');
+    const zoomOutBtnFilters  = document.getElementById('zoomOutBtnFilters');
+    const resetBtnFilters    = document.getElementById('resetBtnFilters');
+    const zoomDisplayFilters = document.getElementById('zoomDisplayFilters');
+
+    function drawFiltersCanvasWithZoom() {
+        if (!filtersCanvasImage || !filtersCtx) return;
+        filtersCtx.fillStyle = '#fdfdfd';
+        filtersCtx.fillRect(0, 0, filtersCanvas.width, filtersCanvas.height);
+        filtersCtx.save();
+        filtersCtx.translate(filtersCanvas.width / 2, filtersCanvas.height / 2);
+        filtersCtx.scale(filtersZoom, filtersZoom);
+        filtersCtx.translate(filtersPan.x / filtersZoom, filtersPan.y / filtersZoom);
+        filtersCtx.translate(-filtersCanvasImage.width / 2, -filtersCanvasImage.height / 2);
+        filtersCtx.drawImage(filtersCanvasImage, 0, 0);
+        filtersCtx.restore();
+    }
+
+    function updateFiltersZoomButtons() {
+        if (zoomInBtnFilters)   zoomInBtnFilters.disabled  = !filtersCanvasImage || filtersZoom >= 5;
+        if (zoomOutBtnFilters)  zoomOutBtnFilters.disabled = !filtersCanvasImage || filtersZoom <= 0.1;
+        if (resetBtnFilters)    resetBtnFilters.disabled   = !filtersCanvasImage;
+        if (zoomDisplayFilters) zoomDisplayFilters.textContent = `Zoom: ${(filtersZoom * 100).toFixed(0)}%`;
+    }
+
+    function handleFiltersZoom(direction) {
+        if (direction === 'in') filtersZoom = Math.min(filtersZoom + 0.2, 5);
+        else                    filtersZoom = Math.max(filtersZoom - 0.2, 0.1);
+        updateFiltersZoomButtons();
+        drawFiltersCanvasWithZoom();
+    }
+
+    window.filtersSetImage = function(img) {
+        filtersCanvasImage = img;
+        filtersZoom = 1;
+        filtersPan  = { x: 0, y: 0 };
+        if (filtersCanvas) {
+            filtersCanvas.width  = img.width;
+            filtersCanvas.height = img.height;
+        }
+        updateFiltersZoomButtons();
+        drawFiltersCanvasWithZoom();
+    };
+
+    if (zoomInBtnFilters)  zoomInBtnFilters.addEventListener('click',  () => handleFiltersZoom('in'));
+    if (zoomOutBtnFilters) zoomOutBtnFilters.addEventListener('click', () => handleFiltersZoom('out'));
+    if (resetBtnFilters) {
+        resetBtnFilters.addEventListener('click', function () {
+            filtersZoom = 1;
+            filtersPan  = { x: 0, y: 0 };
+            updateFiltersZoomButtons();
+            drawFiltersCanvasWithZoom();
+        });
+    }
+
+    if (filtersCanvas) {
+        filtersCanvas.addEventListener('wheel', function (e) {
+            e.preventDefault();
+            handleFiltersZoom(e.deltaY < 0 ? 'in' : 'out');
+        }, { passive: false });
+
+        filtersCanvas.addEventListener('mousedown', function (e) {
+            if (!filtersCanvasImage) return;
+            filtersIsDragging = true;
+            filtersDragStart  = { x: e.clientX, y: e.clientY };
+        });
+        filtersCanvas.addEventListener('mousemove', function (e) {
+            if (!filtersIsDragging || !filtersCanvasImage) return;
+            filtersPan.x += e.clientX - filtersDragStart.x;
+            filtersPan.y += e.clientY - filtersDragStart.y;
+            filtersDragStart = { x: e.clientX, y: e.clientY };
+            drawFiltersCanvasWithZoom();
+        });
+        filtersCanvas.addEventListener('mouseup',    () => { filtersIsDragging = false; });
+        filtersCanvas.addEventListener('mouseleave', () => { filtersIsDragging = false; });
+    }
+
+    updateFiltersZoomButtons();
 
     console.log('✅ App initialization complete');
 });

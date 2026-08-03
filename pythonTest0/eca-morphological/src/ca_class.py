@@ -276,7 +276,12 @@ class Eca:
         else:
             scaled_data = (image_data * 255).astype(np.uint8)
         image = Image.fromarray(scaled_data, mode="L")
-        
+
+        if self.pixel_size > 1:
+            new_width = image.width * self.pixel_size
+            new_height = image.height * self.pixel_size
+            image = image.resize((new_width, new_height), Image.NEAREST)
+
         self.logger.info(f"Image generated: {file_name}")
         if save_file:
             self.image_file = file_name
