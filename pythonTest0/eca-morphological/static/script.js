@@ -45,6 +45,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const simForm = document.getElementById('param-form');
     const initMethodSelect = document.getElementById('init-method-select');
     const densityContainer = document.getElementById('density-container');
+    const seedContainer    = document.getElementById('seed-container');
+    const seedInput        = document.getElementById('seed-input');
     const densityInput = document.getElementById('density-input');
     const canvas = document.getElementById('image-canvas');
     const saveBtn = document.getElementById('save-image-btn');
@@ -213,19 +215,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===========================
     // DENSITY FIELD TOGGLE
     // ===========================
-    function toggleDensity() {
-        if (initMethodSelect && densityContainer) {
-            if (initMethodSelect.value === 'random') {
-                densityContainer.style.display = 'block';
-            } else {
-                densityContainer.style.display = 'none';
-            }
-        }
+    function toggleInitFields() {
+        const method = initMethodSelect ? initMethodSelect.value : '';
+        if (densityContainer)
+            densityContainer.style.display = (method === 'random') ? 'block' : 'none';
+        if (seedContainer)
+            seedContainer.style.display = (method === 'seed' || method === 'seed_zero') ? 'block' : 'none';
     }
-    
+
     if (initMethodSelect) {
-        initMethodSelect.addEventListener('change', toggleDensity);
-        toggleDensity();
+        initMethodSelect.addEventListener('change', toggleInitFields);
+        toggleInitFields();
+    }
+
+    // Seed input: allow only 0 and 1 characters
+    if (seedInput) {
+        seedInput.addEventListener('input', function () {
+            const pos = this.selectionStart;
+            const cleaned = this.value.replace(/[^01]/g, '');
+            if (cleaned !== this.value) {
+                this.value = cleaned;
+                this.setSelectionRange(Math.min(pos, cleaned.length), Math.min(pos, cleaned.length));
+            }
+        });
+        seedInput.addEventListener('keypress', function (e) {
+            if (!/[01]/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault();
+        });
     }
     
     if (densityInput) {
@@ -278,6 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const payload = Object.fromEntries(formData.entries());
             // Use the shared global value so both sections are always in sync
             payload.pixel_size = window.globalPixelSize || 1;
+            payload.seed = (seedInput && seedInput.value.trim()) ? seedInput.value.trim() : '0001000';
             console.log('Sending payload:', payload);
             
             fetch('/generate_image', {

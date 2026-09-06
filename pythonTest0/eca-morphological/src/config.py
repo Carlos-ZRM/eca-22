@@ -17,6 +17,8 @@ class AppSettings:
     CELLULAR_AUTOMATA_INIT_METHODS = [
         "single_cell",
         "random",
+        "seed",
+        "seed_zero",
     ]
     CELLULAR_AUTOMATA_PRINT_METHODS = [
         "png"

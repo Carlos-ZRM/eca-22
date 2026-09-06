@@ -1,6 +1,7 @@
 import io
 import base64
 import ca_class
+import fra_count_tr_class
 
 import cv2
 import numpy as np
@@ -35,6 +36,11 @@ class MorphologicalParams(BaseModel):
     pixel_size: int = 1
 
 
+
+class FindTrianglesParams(BaseModel):
+    image_data: str       # base64 data URL from canvas
+    pixel_size: int = 1
+
 class SimulationParams(BaseModel):
     rule: str
     cell_space: int
@@ -43,6 +49,7 @@ class SimulationParams(BaseModel):
     print_method: str
     density: float = 0.5
     pixel_size: int = 3
+    seed: str = "0001000"
       # Default pixel size value
 
 
@@ -96,7 +103,8 @@ async def generate_image(params: SimulationParams):
         size=eca_size, 
         evolutions=eca_evolutions, 
         print_method=eca_print_method, 
-        init_method=eca_init_method
+        init_method=eca_init_method,
+        seed=params.seed if params.seed else "0001000"
     )
     
     # If using random init method, pass the density to the init_random method
@@ -128,6 +136,59 @@ async def generate_image(params: SimulationParams):
     return {
         "image_data": to_data_url(img_display),
         "raw_image_data": to_data_url(img_raw),
+    }
+
+
+@app.post("/find_triangles")
+async def find_triangles(params: FindTrianglesParams):
+    """
+    Receives a base64 canvas image, runs FractalCountTriangle to detect
+    and colour-code triangular structures, and returns the annotated image.
+    """
+    import os as _os
+
+    # Decode incoming canvas image
+    header, encoded = params.image_data.split(",", 1)
+    img_bytes = base64.b64decode(encoded)
+
+    # Fixed temp filenames in the working directory
+    tmp_input  = "_web_fra_input.png"
+    tmp_result = "result_triangle_" + tmp_input
+
+    with open(tmp_input, "wb") as f:
+        f.write(img_bytes)
+
+    try:
+        fra = fra_count_tr_class.FractalCountTriangle(image_path=tmp_input)
+        fra.read_image()
+        fra.count_lines_for()
+        fra.count_triangles_for()
+        fra.draw_triangles()
+
+        result_img = Image.open(tmp_result).convert("RGBA")
+    finally:
+        if _os.path.exists(tmp_input):  _os.remove(tmp_input)
+        if _os.path.exists(tmp_result): _os.remove(tmp_result)
+
+    pixel_size = max(1, min(15, params.pixel_size))
+    if pixel_size > 1:
+        result_img = result_img.resize(
+            (result_img.width * pixel_size, result_img.height * pixel_size),
+            Image.NEAREST
+        )
+
+    # Also produce raw (pixel_size=1) for chaining
+    raw_img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
+
+    def to_data_url(img):
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+    return {
+        "image_data":     to_data_url(result_img),
+        "raw_image_data": to_data_url(raw_img),
+        "triangle_count": len(fra.histogram_triangles),
     }
 
 @app.post("/generate_morphological")
