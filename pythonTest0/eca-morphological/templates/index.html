@@ -29,49 +29,49 @@
                 <div>
                     <label for="rule-select">
                         Rule 
-                        <span class="info-icon" data-info="Select the cellular automaton rule to simulate.">ⓘ</span>
+                        <span class="info-icon" data-info="Select the cellular automaton rule to simulate."><svg width="10" height="12" viewBox="0 0 10 13" fill="white" aria-hidden="true"><rect x="4" y="5" width="2" height="7" rx="1"/><circle cx="5" cy="2" r="1.5"/></svg></span>
                     </label>
                     <select name="rule" id="rule-select"></select>
                 </div>
                 <div>
                     <label for="init-method-select">
                         Init Method
-                        <span class="info-icon" data-info="Select the initialization method: 'single_cell' for a single live cell, 'random' for random initialization.">ⓘ</span>
+                        <span class="info-icon" data-info="Select the initialization method: 'single_cell' for a single live cell, 'random' for random initialization."><svg width="10" height="12" viewBox="0 0 10 13" fill="white" aria-hidden="true"><rect x="4" y="5" width="2" height="7" rx="1"/><circle cx="5" cy="2" r="1.5"/></svg></span>
                     </label>
                     <select name="init_method" id="init-method-select"></select>
                 </div>
                 <div>
                     <label for="cell-space-input">
                         Cell Space
-                        <span class="info-icon" data-info="Size of the simulation grid in cells.">ⓘ</span>
+                        <span class="info-icon" data-info="Size of the simulation grid in cells."><svg width="10" height="12" viewBox="0 0 10 13" fill="white" aria-hidden="true"><rect x="4" y="5" width="2" height="7" rx="1"/><circle cx="5" cy="2" r="1.5"/></svg></span>
                     </label>
                     <input type="number" id="cell-space-input" name="cell_space" value="300" required>
                 </div>
                 <div>
                     <label for="num-evolutions-input">
                         Evolutions
-                        <span class="info-icon" data-info="Number of generations to simulate.">ⓘ</span>
+                        <span class="info-icon" data-info="Number of generations to simulate."><svg width="10" height="12" viewBox="0 0 10 13" fill="white" aria-hidden="true"><rect x="4" y="5" width="2" height="7" rx="1"/><circle cx="5" cy="2" r="1.5"/></svg></span>
                     </label>
                     <input type="number" id="num-evolutions-input" name="num_evolutions" value="150" required>
                 </div>
                 <div id="density-container">
                     <label for="density-input">
                         Percentage (%)
-                        <span class="info-icon" data-info="For Random init method. Value between 0 and 1 (0.5 = 50%).">ⓘ</span>
+                        <span class="info-icon" data-info="For Random init method. Value between 0 and 1 (0.5 = 50%)."><svg width="10" height="12" viewBox="0 0 10 13" fill="white" aria-hidden="true"><rect x="4" y="5" width="2" height="7" rx="1"/><circle cx="5" cy="2" r="1.5"/></svg></span>
                     </label>
                     <input type="number" id="density-input" name="density" min="0" max="1" step="0.01" value="0.5">
                 </div>
                 <div>
                     <label for="print-method-select">
                         Print Method
-                        <span class="info-icon" data-info="Select the backend library to generate the image. This is for demonstration purposes.">ⓘ</span>
+                        <span class="info-icon" data-info="Select the backend library to generate the image. This is for demonstration purposes."><svg width="10" height="12" viewBox="0 0 10 13" fill="white" aria-hidden="true"><rect x="4" y="5" width="2" height="7" rx="1"/><circle cx="5" cy="2" r="1.5"/></svg></span>
                     </label>
                     <select name="print_method" id="print-method-select"></select>
                 </div>
                 <div id="pixel_size">
                     <label for="pixel-size-input">
                         Pixel Size
-                        <span class="info-icon" data-info="Sets the size of each cell in pixels for the output image.">ⓘ</span>
+                        <span class="info-icon" data-info="Sets the size of each cell in pixels for the output image."><svg width="10" height="12" viewBox="0 0 10 13" fill="white" aria-hidden="true"><rect x="4" y="5" width="2" height="7" rx="1"/><circle cx="5" cy="2" r="1.5"/></svg></span>
                     </label>
                     <div class="stepper">
                         <button type="button" class="stepper-btn" onclick="stepPixelSize(-1, 'pixel-size-input')">−</button>
@@ -88,13 +88,13 @@
             <div class="canvas-controls">
                 <div class="controls-group">
                     <button id="zoomInBtn" class="btn-zoom-in" title="Zoom In (or scroll up)">
-                        <span>🔍+</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                     </button>
                     <button id="zoomOutBtn" class="btn-zoom-out" title="Zoom Out (or scroll down)">
-                        <span>🔍-</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                     </button>
                     <button id="resetBtn" class="btn-reset" title="Reset zoom and pan">
-                        <span>↻</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
                     </button>
                 </div>
                 <div class="zoom-display" id="zoomDisplay">Zoom: 100%</div>
@@ -114,7 +114,7 @@
                 <div>
                     <label for="morph-operation-select">
                         Operation
-                        <span class="info-icon" data-info="Select the morphological operation to apply.">ⓘ</span>
+                        <span class="info-icon" data-info="Select the morphological operation to apply."><svg width="10" height="12" viewBox="0 0 10 13" fill="white" aria-hidden="true"><rect x="4" y="5" width="2" height="7" rx="1"/><circle cx="5" cy="2" r="1.5"/></svg></span>
                     </label>
                     <select name="operation" id="morph-operation-select">
                         {% for op in morphology_operations %}
@@ -125,7 +125,7 @@
                 <div>
                     <label for="morph-kernel-select">
                         Kernel
-                        <span class="info-icon" data-info="Structuring element used for the morphological operation.">ⓘ</span>
+                        <span class="info-icon" data-info="Structuring element used for the morphological operation."><svg width="10" height="12" viewBox="0 0 10 13" fill="white" aria-hidden="true"><rect x="4" y="5" width="2" height="7" rx="1"/><circle cx="5" cy="2" r="1.5"/></svg></span>
                     </label>
                     <select name="kernel" id="morph-kernel-select">
                         {% for k in kernel_options %}
@@ -136,14 +136,14 @@
                 <div>
                     <label for="morph-iterations-input">
                         Iterations
-                        <span class="info-icon" data-info="Number of times to apply the operation.">ⓘ</span>
+                        <span class="info-icon" data-info="Number of times to apply the operation."><svg width="10" height="12" viewBox="0 0 10 13" fill="white" aria-hidden="true"><rect x="4" y="5" width="2" height="7" rx="1"/><circle cx="5" cy="2" r="1.5"/></svg></span>
                     </label>
                     <input type="number" id="morph-iterations-input" name="iterations" value="1" min="1" required>
                 </div>
                 <div>
                     <label for="morph-pixel-size-input">
                         Pixel Size
-                        <span class="info-icon" data-info="Sets the size of each cell in pixels for the output image.">ⓘ</span>
+                        <span class="info-icon" data-info="Sets the size of each cell in pixels for the output image."><svg width="10" height="12" viewBox="0 0 10 13" fill="white" aria-hidden="true"><rect x="4" y="5" width="2" height="7" rx="1"/><circle cx="5" cy="2" r="1.5"/></svg></span>
                     </label>
                     <div class="stepper">
                         <button type="button" class="stepper-btn" onclick="stepPixelSize(-1, 'morph-pixel-size-input')">−</button>
@@ -152,21 +152,21 @@
                     </div>
                 </div>
                 <button type="submit">Apply</button>
-                <button type="button" onclick="copySimulationToMorphCanvas()" style="background-color: #9333ea;">↺ Reset</button>
-                <button type="button" onclick="saveMorphImage()" style="background-color: #16a34a;">⬇ Save Image</button>
+                <button type="button" onclick="copySimulationToMorphCanvas()" class="btn-secondary"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg> Reset</button>
+                <button type="button" onclick="saveMorphImage()" class="btn-success"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save Image</button>
             </form>
         </div>
         <div id="morph-right-panel" class="tab-right-panel">
             <div class="canvas-controls">
                 <div class="controls-group">
                     <button id="zoomInBtnMorph" class="btn-zoom-in" title="Zoom In (or scroll up)">
-                        <span>🔍+</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                     </button>
                     <button id="zoomOutBtnMorph" class="btn-zoom-out" title="Zoom Out (or scroll down)">
-                        <span>🔍-</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                     </button>
                     <button id="resetBtnMorph" class="btn-reset" title="Reset zoom and pan">
-                        <span>↻</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
                     </button>
                 </div>
                 <div class="zoom-display" id="zoomDisplayMorph">Zoom: 100%</div>
@@ -185,7 +185,7 @@
                 <div>
                     <label for="filters-pixel-size-input">
                         Pixel Size
-                        <span class="info-icon" data-info="Sets the size of each cell in pixels for the output image.">ⓘ</span>
+                        <span class="info-icon" data-info="Sets the size of each cell in pixels for the output image."><svg width="10" height="12" viewBox="0 0 10 13" fill="white" aria-hidden="true"><rect x="4" y="5" width="2" height="7" rx="1"/><circle cx="5" cy="2" r="1.5"/></svg></span>
                     </label>
                     <div class="stepper">
                         <button type="button" class="stepper-btn" onclick="stepPixelSize(-1, 'filters-pixel-size-input')">−</button>
@@ -194,20 +194,20 @@
                     </div>
                 </div>
                 <button type="submit">Apply</button>
-                <button type="button" onclick="showHistogram()" style="background-color: #0891b2;">📊 Show Histogram</button>
+                <button type="button" onclick="showHistogram()" class="btn-info-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/></svg> Histogram</button>
             </form>
         </div>
         <div id="filters-right-panel" class="tab-right-panel">
             <div class="canvas-controls">
                 <div class="controls-group">
                     <button id="zoomInBtnFilters" class="btn-zoom-in" title="Zoom In (or scroll up)">
-                        <span>🔍+</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                     </button>
                     <button id="zoomOutBtnFilters" class="btn-zoom-out" title="Zoom Out (or scroll down)">
-                        <span>🔍-</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                     </button>
                     <button id="resetBtnFilters" class="btn-reset" title="Reset zoom and pan">
-                        <span>↻</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
                     </button>
                 </div>
                 <div class="zoom-display" id="zoomDisplayFilters">Zoom: 100%</div>

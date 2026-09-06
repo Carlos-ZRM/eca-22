@@ -6,6 +6,12 @@
     --border-color: #ddd;
     --accent-color: #007bff;
     --accent-hover-color: #0056b3;
+    --btn-secondary-color: #9333ea;
+    --btn-secondary-hover: #7e22ce;
+    --btn-success-color: #16a34a;
+    --btn-success-hover: #15803d;
+    --btn-info-color: #0891b2;
+    --btn-info-hover: #0e7490;
 }
 
 body.dark-mode {
@@ -16,6 +22,12 @@ body.dark-mode {
     --border-color: #444;
     --accent-color: #2d88ff;
     --accent-hover-color: #4b9aff;
+    --btn-secondary-color: #a855f7;
+    --btn-secondary-hover: #9333ea;
+    --btn-success-color: #22c55e;
+    --btn-success-hover: #16a34a;
+    --btn-info-color: #22d3ee;
+    --btn-info-hover: #06b6d4;
 }
 
 body {
@@ -192,6 +204,25 @@ input:checked + .slider:before {
     background-color: #7e22ce;
 }
 
+.btn-secondary {
+    background-color: var(--btn-secondary-color);
+}
+.btn-secondary:hover {
+    background-color: var(--btn-secondary-hover);
+}
+.btn-success {
+    background-color: var(--btn-success-color);
+}
+.btn-success:hover {
+    background-color: var(--btn-success-hover);
+}
+.btn-info-btn {
+    background-color: var(--btn-info-color);
+}
+.btn-info-btn:hover {
+    background-color: var(--btn-info-hover);
+}
+
 .btn-zoom-in:disabled, .btn-zoom-out:disabled, .btn-reset:disabled {
     background-color: #ccc;
     cursor: not-allowed;
@@ -314,16 +345,20 @@ button:hover {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background-color: #bbb;
+    background-color: #9ca3af;
     color: white;
-    font-weight: bold;
     cursor: pointer;
-    font-size: 12px;
     user-select: none;
+    flex-shrink: 0;
+    transition: background-color 0.2s;
+}
+
+.info-icon:hover {
+    background-color: var(--accent-color);
 }
 
 body.dark-mode .info-icon {
-    background-color: #555;
+    background-color: #6b7280;
 }
 
 #info-popup {

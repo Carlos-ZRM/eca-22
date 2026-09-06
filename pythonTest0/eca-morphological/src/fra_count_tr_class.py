@@ -57,7 +57,7 @@ class FractalCountTriangle:
         self.logger.debug(f"Image shape: {rows}x{cols}")
         list_lines = []
         for x in range(rows):
-        #for x in range(9,14):
+        #for x in range(69,70):
             # Set the starting column index for the current row
             y = 0
             # Set the list of lines for the current row to an empty list
@@ -91,18 +91,18 @@ class FractalCountTriangle:
                                 self.logger.debug(f"     ||Found a single point at ({x}, {y}, {next_value})")
                             else:
                             # 2, Check end of line on right side right pixel is different) 
-                                self.logger.debug(f"     ||Found a line from ({x}, {line_start}) to ({x}, {line_end})")
+                                self.logger.debug(f"     ||Found a line from  s1 ({x}, {line_start}) to ({x}, {line_end})")
                                 self.logger.debug(f"     ||End line at {y} ")
                                 list_lines.append((line_start, line_end))
                             line_start = None
                             line_end = None
                         y += 1
-                    if line_start is not None and line_end is cols - 1:
-                        self.logger.debug(f"     ||Found a line from ({x}, {line_start}) to ({x}, {line_end})")
-                        self.logger.debug(f"     ||End line at {y} ")
-                        list_lines.append((line_start, line_end))
-                    elif line_start is not None and line_end == (cols - 1):
-                        self.logger.debug(f"     ||Found a line from ({x}, {line_start}) to ({x}, {line_end})")
+                    #if line_start is not None and line_end is cols - 1:
+                    #    self.logger.debug(f"     ||Found a line from s2 ({x}, {line_start}) to ({x}, {line_end})")
+                    #    self.logger.debug(f"     ||End line at {y} ")
+                    #    list_lines.append((line_start, line_end))
+                    if line_start is not None and line_end == (cols - 1):
+                        self.logger.debug(f"     ||Found a line from s3 ({x}, {line_start}) to ({x}, {line_end})")
                         self.logger.debug(f"     ||End line at {y} ")
                         list_lines.append((line_start, line_end))
                     y += 1
@@ -110,23 +110,28 @@ class FractalCountTriangle:
 
                     
                     # Found a pixel that matches the line value we are searching for, so we need to find the start and end of the line
-
+            # After processing all pixels in the row, we need to check if there are any lines that wrap around the row (i.e., lines that start at the beginning of the row and end at the end of the row). If such lines exist, we need to merge them into a single line.
             # Check end line conditions.
             if len(list_lines) > 0:
-                self.logger.debug(f"            ||| Checking for wrap-around lines in row {x}: {list_lines}")
+                self.logger.debug(f"            ||| Checking for wrap-around lines in row {x}: {list_lines} (Count: {len(list_lines)})")
+                # Take first and last lines to check if they wrap around the row
                 first_line = list_lines[0] if list_lines else None
                 last_line = list_lines[-1] if list_lines else None
+
+                # Check start of first line and end of last line to see if they wrap around the row
                 if first_line[0] == 0 and last_line[1] == cols - 1:
                     self.logger.debug(f"     ||Found a line that wraps around the row {x}: {first_line} to {last_line}")
                     # Merge the first and last lines into a single line
                     merged_line = (last_line[0], first_line[1])
-                    list_lines = [merged_line] + list_lines[1:-1]
                     self.logger.debug(f"     ||Merged line: {merged_line}")
+
+                    list_lines = [merged_line] + list_lines[1:-1]
+                    self.logger.debug(f"     ||Merged line m1: {merged_line}")
                 elif  last_line[1] == cols - 1 and  self.binary_image[x, 0] == self.line_value_search:
                     self.logger.debug(f"     ||Found a line that wraps around the row {x}: 0 to {last_line}")
                     merged_line = (last_line[0], 0)
-                    list_lines = [merged_line] + list_lines[1:-1]
-                    self.logger.debug(f"     ||Merged line: {merged_line}")
+                    list_lines = [merged_line] + list_lines[0:-1]
+                    self.logger.debug(f"     ||Merged line m2: {merged_line}")
                 #elif first_line[0] == 0 and  self.binary_image[x,  cols - 1] == self.line_value_search:
                 #    self.logger.debug(f"     ||Found a line that wraps around the row {x}: 0 to {last_line}")
                 #    merged_line = ( cols - 1 ,first_line[0])
@@ -351,12 +356,10 @@ class FractalCountTriangle:
                         is_triangle = False
                         break
                     else:
-                        print("NEXT LINE "+ str(next__line))
                         triangle_lines.append(next__line)
                         lines[h+1].remove(next__line)
                     xx += 1
                 if is_triangle and len(triangle_lines) > 0:
-                    print("FIRST LINE"+ str(line))
                     triangle_lines.insert(0,line)
                     self.logger.info(f"Triangle found with base {base} and height {height} at row {x} and first line {triangle_lines[0]}")
                     triangle =  { "base": base, "height": height, "lines": triangle_lines , "area": area, "row": x}
