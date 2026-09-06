@@ -19,7 +19,7 @@ eca.define_evolution_config(size=150, evolutions=90, print_method="png_file", in
 
 eca.set_kernel(kernel_custom)
 eca.set_iterations(2)
-eca.set_pixel_size(4)
+eca.set_pixel_size(1)
 eca.rdensity = 0.3
 eca.evolution()
 

@@ -3,10 +3,23 @@ from PIL import Image, ImageDraw
 import numpy as np
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(funcName)s - %(levelname)s - %(message)s')
 
 
 class FractalCountTriangle:
+    _FUNCTION_LOG_LEVELS = {
+        '__init__':          logging.INFO,
+        'read_image':        logging.INFO,
+        'count_lines_for':   logging.DEBUG,
+        'count_triangles':   logging.INFO,
+        'find_line':         logging.DEBUG,
+        'find_start_line':   logging.DEBUG,
+        'find_end_line':     logging.DEBUG,
+        'mark_visited':      logging.INFO,
+        'draw_lines':        logging.INFO,
+        'count_triangles_for': logging.DEBUG,
+        'draw_triangles':    logging.INFO,
+    }
     def __init__(
         self,
         start_size=3,
@@ -15,6 +28,7 @@ class FractalCountTriangle:
         zero_pixel_color=(0, 0, 0),
     ):
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('__init__', logging.DEBUG))
         self.histogram_lines = {}
         self.image_path = image_path
         self.one_pixel_color = one_pixel_color
@@ -26,6 +40,7 @@ class FractalCountTriangle:
 
     def read_image(self):
         """Reads the image from the specified path and converts it to a binary format."""
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('read_image', logging.DEBUG))
         try:
             with Image.open(self.image_path) as img:
                 self.binary_image = np.array(img)
@@ -36,6 +51,7 @@ class FractalCountTriangle:
             return None
 
     def count_lines_for(self):
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('count_lines_for', logging.DEBUG))
         # Get the dimensions of the binary image
         rows, cols = self.binary_image.shape
         self.logger.debug(f"Image shape: {rows}x{cols}")
@@ -121,9 +137,11 @@ class FractalCountTriangle:
                     
             self.histogram_lines[x] = list_lines
             self.logger.debug(f"List of lines found {x}: {list_lines}, value search {self.line_value_search}")
+            self.logger.info(f"Row {x}: {len(list_lines)} line(s) found")
         self.logger.info(f"Final histogram of lines by row: {self.histogram_lines}")
 
     def count_triangles(self):
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('count_triangles', logging.DEBUG))
         rows, cols = self.binary_image.shape
         print(f"Image shape: {rows}x{cols}")
         
@@ -150,6 +168,7 @@ class FractalCountTriangle:
                     else:
                         visited_j[j] = 1
             self.histogram_lines[x] = list_lines
+            self.logger.info(f"Row {x}: {len(list_lines)} line(s) found")
             # print(f"List of lines found {x}:", list_lines, "value search ", self.line_value_search)
             x += 1
         print("Final histogram of lines by row:", self.histogram_lines)
@@ -172,6 +191,7 @@ class FractalCountTriangle:
                 3.1 Return None, None for a point.
                 3.2 Else, return the start and end columns.
         """
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('find_line', logging.DEBUG))
         if self.binary_image[row, col] != self.line_value_search:
             # Is a background pixel
             return None, None
@@ -203,6 +223,7 @@ class FractalCountTriangle:
             2. IF the pixel is different from the line value (line_value_search), it's a background pixel ( end recursion)
                2.1 Return col + 1.
         """
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('find_start_line', logging.DEBUG))
         value = self.binary_image[row, left_col]
         if value == self.line_value_search:
             return self.find_start_line(row, col, left_col - 1)
@@ -220,6 +241,7 @@ class FractalCountTriangle:
         Returns:
             int: The end column of the line, or None if not found.
         """
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('find_end_line', logging.DEBUG))
         end_col = None
         if right_col >= 50:
             # print("At the end of the row",col)
@@ -237,6 +259,7 @@ class FractalCountTriangle:
         """
         Marks the visited cells in the row_list between the start and end columns.
         """
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('mark_visited', logging.DEBUG))
         x = j_start
         while x <= j_end:
             row_list[x] = 1
@@ -244,29 +267,27 @@ class FractalCountTriangle:
             x += 1
 
     def draw_lines(self):
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('draw_lines', logging.DEBUG))
         img_result = Image.open(self.image_path).convert("RGBA")
-        draw = ImageDraw.Draw(img_result)
         rows, cols = self.binary_image.shape
+
+        draw = ImageDraw.Draw(img_result)
+
         for x in self.histogram_lines:
             for line in self.histogram_lines[x]:
                 start_col, end_col = line
-
-                # if start_col < 0:
-                #     print("Error in start_col", start_col, ":", 49 + start_col)
-                #     start_col = 49 + start_col
-
-                #     draw.line([(0, x), (end_col, x)], fill="red", width=1)
-                #     draw.line([(start_col, x), (49, x)], fill="blue", width=1)
                 if start_col > end_col:
-                    #print("Line with border lines ", start_col, end_col)
                     draw.line([(start_col, x), (cols-1, x)], fill="red", width=1)
                     draw.line([(0, x), (end_col, x)], fill="red", width=1)
                 else:
                     draw.line([(start_col, x), (end_col, x)], fill="red", width=1)
-                # Draw the line at the appropriate position
+            if x % 10 == 0:
+                draw.point((cols - 1, x), fill="yellow")
+
         img_result.save("result_" + self.image_path)
 
     def count_triangles_for(self):
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('count_triangles_for', logging.INFO))
         # Implement the logic to count lines based on the histogram of lines
         # Get the histogram of lines
         lines = self.histogram_lines.copy()
@@ -345,6 +366,7 @@ class FractalCountTriangle:
         self.logger.info(f"Total triangles found: {len(self.histogram_triangles)}")
 
     def draw_triangles(self):
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('draw_triangles', logging.DEBUG))
         img_result = Image.open(self.image_path).convert("RGBA")
         draw = ImageDraw.Draw(img_result)
         rows, cols = self.binary_image.shape
