@@ -349,8 +349,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===========================
     if (themeToggle) {
         themeToggle.addEventListener('change', () => {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
+            const nowDark = document.body.getAttribute('data-at-theme') !== 'dark';
+            if (nowDark) { document.body.setAttribute('data-at-theme', 'dark'); } else { document.body.removeAttribute('data-at-theme'); }
+            const isDark = document.body.getAttribute('data-at-theme') === 'dark';
             // localStorage can throw (private mode / blocked site data) — must not
             // abort the rest of initialization
             try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
@@ -358,7 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             if (localStorage.getItem('theme') === 'dark') {
-                document.body.classList.add('dark-mode');
+                document.body.setAttribute('data-at-theme', 'dark');
                 themeToggle.checked = true;
             }
         } catch (e) {

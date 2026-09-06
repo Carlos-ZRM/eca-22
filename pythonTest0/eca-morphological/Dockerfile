@@ -14,8 +14,11 @@ RUN dnf install -y --nodocs \
 RUN pip install --no-cache-dir poetry
 
 # Install into the system Python (no virtualenv inside the container)
+# PYO3_USE_ABI3_FORWARD_COMPATIBILITY lets pydantic-core (PyO3 ≤0.24) build
+# against the stable ABI on Python 3.14+ until pydantic-core ships native support
 ENV POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_NO_INTERACTION=1
+    POETRY_NO_INTERACTION=1 \
+    PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
 
 # ── Dependencies ──────────────────────────────────────────────────────────────
 COPY pyproject.toml poetry.lock* ./
@@ -27,7 +30,8 @@ COPY templates/ ./templates/
 COPY static/    ./static/
 
 # ── Runtime config ────────────────────────────────────────────────────────────
-ENV PYTHONPATH=/app/src
+ENV PYTHONPATH=/app/src \
+    MPLCONFIGDIR=/tmp
 
 # OpenShift-compatible permissions
 RUN chown -R 0:0 /app && chmod -R g=u /app

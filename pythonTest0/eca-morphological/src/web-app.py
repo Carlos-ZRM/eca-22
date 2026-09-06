@@ -11,6 +11,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel
 from PIL import Image, ImageDraw, ImageFont
 
@@ -21,7 +22,15 @@ from config import AppSettings, MorphologySettings
 # --- Application Setup ---
 app = FastAPI()
 # Assume the templates directory is relative to the project root
-templates = Jinja2Templates(directory="templates")
+# Build the Jinja2 env manually with cache_size=0 to avoid the
+# Python 3.14 unhashable-tuple bug when Jinja2 >=3.2 includes globals
+# dicts in its LRU cache key.
+_jinja_env = Environment(
+    loader=FileSystemLoader("templates"),
+    autoescape=True,
+    cache_size=0,
+)
+templates = Jinja2Templates(env=_jinja_env)
 
 # Mount static files (CSS, JS, images, etc.)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -60,9 +69,9 @@ class SimulationParams(BaseModel):
 async def debug_page(request: Request):
     """Debug page to check if backend data is being passed correctly."""
     return templates.TemplateResponse(
+        request,
         "debug.html",
-        {
-            "request": request,
+        context={
             "rules": AppSettings.CELLULAR_AUTOMATA_RULES,
             "init_methods": AppSettings.CELLULAR_AUTOMATA_INIT_METHODS,
             "print_methods": AppSettings.CELLULAR_AUTOMATA_PRINT_METHODS,
@@ -74,9 +83,9 @@ async def debug_page(request: Request):
 async def read_root(request: Request):
     """Serves the main HTML page and passes the config lists from the AppSettings class."""
     return templates.TemplateResponse(
+        request,
         "index.html",
-        {
-            "request": request,
+        context={
             "rules": AppSettings.CELLULAR_AUTOMATA_RULES,
             "init_methods": AppSettings.CELLULAR_AUTOMATA_INIT_METHODS,
             "print_methods": AppSettings.CELLULAR_AUTOMATA_PRINT_METHODS,

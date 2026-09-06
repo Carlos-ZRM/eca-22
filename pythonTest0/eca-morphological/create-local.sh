@@ -6,7 +6,7 @@ set -euo pipefail
 # ------------------------------------------------------------------
 IMAGE_NAME=eca-morphological
 CONTAINER_NAME=eca-morphological
-HOST_PORT=8080
+HOST_PORT=8088
 CONTAINER_PORT=8080
 
 # ------------------------------------------------------------------
@@ -16,14 +16,18 @@ usage() {
   cat <<HELP
 Usage: $(basename "$0") [OPTIONS]
 
-  Rebuild the $IMAGE_NAME image with Poetry and recreate the container.
-  Every run performs a full stop → remove → build → start cycle.
+  Build the $IMAGE_NAME image and run the container.
+  By default (no flags) runs the full stop → remove → build → start cycle.
 
 Options:
+  --rebuild     Full cycle: stop container, remove image, build, start   (default)
+  --rerun       Fast cycle: stop container, start — skips image build
   -h, --help    Show this help message and exit
 
 Examples:
-  ./$(basename "$0")          Full rebuild and recreate
+  ./$(basename "$0")            Full rebuild and recreate (default)
+  ./$(basename "$0") --rebuild  Same as default
+  ./$(basename "$0") --rerun    Just restart the existing image (no build)
   podman logs -f $CONTAINER_NAME   Follow container logs after start
 
 Notes:
@@ -37,9 +41,13 @@ HELP
 # ------------------------------------------------------------------
 # Flags
 # ------------------------------------------------------------------
+MODE=rebuild   # default
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -h|--help) usage ;;
+    --rebuild)   MODE=rebuild  ; shift ;;
+    --rerun)     MODE=rerun    ; shift ;;
+    -h|--help)   usage ;;
     *) echo "Unknown flag: $1" >&2; usage ;;
   esac
 done
@@ -93,9 +101,19 @@ run_container() {
 # ------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------
-stop_container
-remove_image
-build_image
-run_container
+case "$MODE" in
+  rebuild)
+    log "Mode: full rebuild"
+    stop_container
+    remove_image
+    build_image
+    run_container
+    ;;
+  rerun)
+    log "Mode: rerun (skipping image build)"
+    stop_container
+    run_container
+    ;;
+esac
 
 log "Done. Follow logs with: podman logs -f $CONTAINER_NAME"
