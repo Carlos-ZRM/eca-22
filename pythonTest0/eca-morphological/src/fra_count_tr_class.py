@@ -3,7 +3,8 @@ from PIL import Image, ImageDraw
 import numpy as np
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(funcName)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, 
+        format='%(name)s - %(funcName)s - %(levelname)s - %(message)s')
 
 
 class FractalCountTriangle:
@@ -11,7 +12,7 @@ class FractalCountTriangle:
         '__init__':          logging.INFO,
         'read_image':        logging.INFO,
         'count_lines_for':   logging.DEBUG,
-        'count_triangles':   logging.INFO,
+        'count_triangles':   logging.DEBUG,
         'find_line':         logging.DEBUG,
         'find_start_line':   logging.DEBUG,
         'find_end_line':     logging.DEBUG,
@@ -292,7 +293,7 @@ class FractalCountTriangle:
         img_result.save("result_" + self.image_path)
 
     def count_triangles_for(self):
-        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('count_triangles_for', logging.INFO))
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('count_triangles_for', logging.DEBUG))
         # Implement the logic to count lines based on the histogram of lines
         # Get the histogram of lines
         lines = self.histogram_lines.copy()

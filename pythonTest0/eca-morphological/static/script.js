@@ -1,4 +1,23 @@
-console.log('🔍 script.js loaded');
+// Debug helpers — flags set server-side via env vars, surfaced via window.ECA_DEBUG
+const _DBG        = window.ECA_DEBUG || {};
+const dbgLines     = (...a) => _DBG.lines     && console.debug('[lines]',     ...a);
+const dbgTriangles = (...a) => _DBG.triangles && console.debug('[triangles]', ...a);
+const dbgDraw      = (...a) => _DBG.draw      && console.debug('[draw]',      ...a);
+
+console.log('🔍 script.js loaded', _DBG);
+
+// ===========================
+// ACTIVITY STATUS HELPER
+// ===========================
+function setStatus(id, state, label, msg) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.setAttribute('data-state', state);
+    const labelEl = el.querySelector('.activity-status__label');
+    const msgEl   = el.querySelector('.activity-status__msg');
+    if (labelEl) labelEl.textContent = label;
+    if (msgEl)   msgEl.textContent   = msg;
+}
 
 // ===========================
 // CANVAS ZOOM/PAN STATE — Simulation tab
@@ -295,6 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
             payload.pixel_size = window.globalPixelSize || 1;
             payload.seed = (seedInput && seedInput.value.trim()) ? seedInput.value.trim() : '0001000';
             console.log('Sending payload:', payload);
+            setStatus('sim-status', 'busy', 'In progress', 'Simulation rule ' + (payload.rule || '') + '…');
             
             fetch('/generate_image', {
                 method: 'POST',
@@ -331,9 +351,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('Failed to load image data');
                 };
                 img.src = data.image_data;
+                setStatus('sim-status', 'done', 'Last simulation', 'Rule ' + (payload.rule || ''));
             })
             .catch(error => {
                 console.error('Error:', error);
+                setStatus('sim-status', 'error', 'Error', error.message);
                 alert('Error generando imagen: ' + error);
             });
         });

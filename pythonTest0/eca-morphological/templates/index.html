@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/styles.css?v=5">
+    <link rel="stylesheet" href="/static/styles.css?v=6">
 </head>
 <body>
 
@@ -97,6 +97,10 @@
                 <button type="submit">Send</button>
                 <button type="button" id="save-image-btn" class="btn-success" style="display:none;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save Image</button>
             </form>
+        <div id="sim-status" class="activity-status">
+            <span class="activity-status__label"></span>
+            <span class="activity-status__msg"></span>
+        </div>
         </div>
         <div id="right-panel" class="tab-right-panel">
             <!-- Canvas Controls -->
@@ -170,6 +174,10 @@
                 <button type="button" onclick="copySimulationToMorphCanvas()" class="btn-secondary"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg> Reset</button>
                 <button type="button" onclick="saveMorphImage()" class="btn-success"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save Image</button>
             </form>
+        <div id="morph-status" class="activity-status">
+            <span class="activity-status__label"></span>
+            <span class="activity-status__msg"></span>
+        </div>
         </div>
         <div id="morph-right-panel" class="tab-right-panel">
             <div class="canvas-controls">
@@ -212,6 +220,10 @@
                 <button type="button" onclick="saveFiltersImage()" class="btn-success"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save Image</button>
                 <button type="button" onclick="showHistogram()" class="btn-info-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/></svg> Histogram</button>
             </form>
+        <div id="tri-status" class="activity-status">
+            <span class="activity-status__label"></span>
+            <span class="activity-status__msg"></span>
+        </div>
         </div>
         <div id="filters-right-panel" class="tab-right-panel">
             <div class="canvas-controls">
@@ -331,6 +343,7 @@
             const imageData = window.morphRawImage;
             if (!imageData) { alert('No simulation image available. Generate one first.'); return; }
 
+            setStatus('morph-status', 'busy', 'In progress', 'Filtering with ' + operation + '\u2026');
             try {
                 const response = await fetch('/generate_morphological', {
                     method: 'POST',
@@ -349,8 +362,10 @@
                     if (window.morphSetImage) window.morphSetImage(img);
                 };
                 img.src = data.image_data;
+                setStatus('morph-status', 'done', 'Last filter', operation + ' · ' + kernel);
             } catch (err) {
                 console.error('Morphological error:', err);
+                setStatus('morph-status', 'error', 'Error', err.message);
                 alert('Error applying morphological operation: ' + err);
             }
         }
@@ -377,6 +392,7 @@
                 alert('No image available. Generate a simulation first.');
                 return;
             }
+            setStatus('tri-status', 'busy', 'In progress', 'Finding triangles…');
             try {
                 const response = await fetch('/find_triangles', {
                     method: 'POST',
@@ -397,9 +413,12 @@
                 };
                 img.src = data.image_data;
 
-                console.log('✓ Triangles found:', data.triangle_count);
+                const tCount = data.triangle_count ?? '?';
+                console.log('✓ Triangles found:', tCount);
+                setStatus('tri-status', 'done', 'Done', tCount + ' triangle' + (tCount === 1 ? '' : 's') + ' found');
             } catch (err) {
                 console.error('Find triangles error:', err);
+                setStatus('tri-status', 'error', 'Error', err.message);
                 alert('Error finding triangles: ' + err);
             }
         }
@@ -429,6 +448,14 @@
         }
     </script>
 
-    <script src="/static/script.js?v=9"></script>
+    <script>
+    // Debug flags injected by Jinja2 from server env vars
+    window.ECA_DEBUG = {
+      lines:     {{ debug_lines | tojson }},
+      triangles: {{ debug_triangles | tojson }},
+      draw:      {{ debug_draw | tojson }}
+    };
+    </script>
+    <script src="/static/script.js?v=10"></script>
 </body>
 </html>

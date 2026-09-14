@@ -11,8 +11,12 @@ logging.basicConfig(level=logging.INFO, format='%(name)s - %(levelname)s - %(mes
 
 
 class Eca:
-    """ECA class for elementary cellular automata."""
+    logging.basicConfig(level=logging.DEBUG, format='%(name)s - %(funcName)s - %(levelname)s - %(message)s')
 
+    """ECA class for elementary cellular automata."""
+    _FUNCTION_LOG_LEVELS = {
+            '__init__':          logging.DEBUG,
+    }
     dict_rules = {
         18: lambda P, Q, R: (~Q) & (P ^ R),
         22: lambda P, Q, R: (P ^ Q ^ R) ^ (P & Q & R),
@@ -46,6 +50,7 @@ class Eca:
         if not (0.0 <= value <= 1.0):
             raise ValueError("rdensity must be between 0.0 and 1.0")
         self._rdensity = value
+        
         if self.size is not None:
             self.logger.debug(f"Re-initializing state with rdensity {self._rdensity}")
             self.init_random()
@@ -57,6 +62,8 @@ class Eca:
         return self.pixel_size
     
     def __init__(self, rule_number=22):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(self._FUNCTION_LOG_LEVELS.get('__init__', logging.DEBUG))
         self.rule_number = rule_number
         self.size = None
         self.evolutions = None
@@ -234,17 +241,23 @@ class Eca:
         initial_time = time.time()
         # If start_array is None, use the initial state
         if start_array is None:
-            start_array = self.init_state
+            start_array = self.init_random()
+            
         # Create history list (matrix)
         self.history = [start_array]
         # Create current array
         current_array = start_array
+
+        self.logger.info(
+            f"Starting evolution with size {self.size},evolutions {self.evolutions}, rdensity {self.rdensity}, and initial state: {start_array if start_array is not None else self.init_state}") 
+                
         # Iterate through the specified number of evolutions
         for _ in range(self.evolutions -1 ):
             current_array = self.next_evolution(current_array)
             self.history.append(current_array)
         # Measure the final time
         final_time = time.time()
+
         self.logger.debug(f"Evolution execution time: {final_time - initial_time:.6f} seconds")
         
         return self.history
@@ -284,26 +297,26 @@ class Eca:
         return image
 
 
-def to_string(obj):
-    """
-    Returns a string representation of an object, showing all its
-    instance variables and their values.
+    def to_string(obj):
+        """
+        Returns a string representation of an object, showing all its
+        instance variables and their values.
 
-    Args:
-        obj: The object to convert to a string.
+        Args:
+            obj: The object to convert to a string.
 
-    Returns:
-        A formatted string with the object's class name and its attributes.
-    """
-    # Get the class name of the object
-    class_name = obj.__class__.__name__
+        Returns:
+            A formatted string with the object's class name and its attributes.
+        """
+        # Get the class name of the object
+        class_name = obj.__class__.__name__
 
-    # Get the dictionary of instance variables
-    attributes = vars(obj)
+        # Get the dictionary of instance variables
+        attributes = vars(obj)
 
-    # Format the attributes into a readable string
-    attr_list = [f"{key}={repr(value)}" for key, value in attributes.items()]
-    attrs_str = ", ".join(attr_list)
+        # Format the attributes into a readable string
+        attr_list = [f"{key}={repr(value)}" for key, value in attributes.items()]
+        attrs_str = ", ".join(attr_list)
 
-    # Combine the class name and attributes
-    return f"{class_name}({attrs_str})"
+        # Combine the class name and attributes
+        return f"{class_name}({attrs_str})"

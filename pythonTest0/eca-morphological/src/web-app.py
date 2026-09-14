@@ -13,6 +13,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel
+import os
 from PIL import Image, ImageDraw, ImageFont
 
 
@@ -62,6 +63,11 @@ class SimulationParams(BaseModel):
       # Default pixel size value
 
 
+# --- Debug flags (set via env vars by create-local.sh) ---
+_debug_lines     = os.environ.get('DEBUG_LINES',     '0') == '1'
+_debug_triangles = os.environ.get('DEBUG_TRIANGLES', '0') == '1'
+_debug_draw      = os.environ.get('DEBUG_DRAW',      '0') == '1'
+
 # --- API Endpoints ---
 
 
@@ -75,6 +81,9 @@ async def debug_page(request: Request):
             "rules": AppSettings.CELLULAR_AUTOMATA_RULES,
             "init_methods": AppSettings.CELLULAR_AUTOMATA_INIT_METHODS,
             "print_methods": AppSettings.CELLULAR_AUTOMATA_PRINT_METHODS,
+            "debug_lines": _debug_lines,
+            "debug_triangles": _debug_triangles,
+            "debug_draw": _debug_draw,
         },
     )
 
@@ -91,6 +100,9 @@ async def read_root(request: Request):
             "print_methods": AppSettings.CELLULAR_AUTOMATA_PRINT_METHODS,
             "morphology_operations": MorphologySettings.MORPHOLOGY_OPERATIONS,
             "kernel_options": list(MorphologySettings.KERNEL_OPTIONS.keys()),
+            "debug_lines": _debug_lines,
+            "debug_triangles": _debug_triangles,
+            "debug_draw": _debug_draw,
         },
     )
 
